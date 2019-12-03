@@ -9,11 +9,12 @@ namespace AdventCode2019
     public class Day1
     {
         IEnumerable<int> values = Utils.IntsFromFile("day1.txt");
+        readonly Func<int, int> Calc = v => Math.Max(v / 3 - 2, 0);
 
         [TestMethod]
         public void Problem1()
         {
-            int result = values.Select(v => Calc(v)).Sum();
+            int result = values.Select(Calc).Sum();
 
             Assert.AreEqual(result, 3219099);
         }
@@ -25,8 +26,6 @@ namespace AdventCode2019
 
             Assert.AreEqual(result, 4825810);
         }
-
-        private int Calc(int value) => value / 3 - 2;
 
         private int CalcRecurse(int value)
         {

@@ -14,5 +14,22 @@ namespace AdventCode2019
 
         public static IEnumerable<int> IntsFromString(string input) =>
             input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(s => int.Parse(s));
+
+        // Returns an array of arrays from a CSV file
+        public static String[][] StringsFromFile(string filename) =>
+            File.ReadAllLines(filename, Encoding.UTF8).Select(s => s.Split(',')).ToArray();
+        
+        // Returns an array of arrays from a CSV file
+        public static String[][] StringsFromString(string input) =>
+            input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(s => s.Split(',')).ToArray();
+
+        public static IEnumerable<T> Generate<T>(T value, Func<T, T> func)
+        {
+            while(true)
+            {
+                yield return value;
+                value = func(value);
+            }
+        }
     }
 }
