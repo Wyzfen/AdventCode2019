@@ -14,8 +14,8 @@ namespace AdventCode2019
         public void Problem1()
         {
 
-            var first = FollowWire(input[0]).Distinct();
-            var second = FollowWire(input[1]).Distinct();
+            var first = FollowWire(input[0]);
+            var second = FollowWire(input[1]);
 
             var intersections = first.Intersect(second);
             var result = intersections.Select((v) => v.Item1 + v.Item2).Min();
@@ -33,19 +33,9 @@ namespace AdventCode2019
 
             var intersections = first.Keys.Intersect(second.Keys);
 
-            var result = int.MaxValue;
-            foreach(var location in intersections)
-            {
-                if (location.Item1 == 0 && location.Item2 == 0) continue;
+            var result = intersections.Select(l => first[l] + second[l]).Min();
 
-                var distA = first[location];
-                var distB = second[location];
-
-                result = Math.Min(result, distA + distB);
-
-            }
-
-            Assert.AreEqual(result, 47898);
+            Assert.AreEqual(result, 48054);
         }
 
         private (int x, int y) GetMovement(string move)
@@ -68,15 +58,15 @@ namespace AdventCode2019
         {
             if (deltax != 0)
             {
-                var xrange = Enumerable.Range(Math.Min(startx + deltax + 1, startx), Math.Abs(deltax));
+                var xrange = Enumerable.Range(Math.Min(startx + deltax + 1, startx), Math.Abs(deltax)).Select(x => (x, starty));
                 if (deltax < 0) xrange = xrange.Reverse();
-                return xrange.Select(x => (x, starty));
+                return xrange;
             }
             else
             {
-                var yrange = Enumerable.Range(Math.Min(starty + deltay + 1, starty), Math.Abs(deltay));
+                var yrange = Enumerable.Range(Math.Min(starty + deltay + 1, starty), Math.Abs(deltay)).Select(y => (startx, y));
                 if (deltay < 0) yrange = yrange.Reverse();
-                return yrange.Select(y => (startx, y));
+                return yrange;
             }
         }
 
@@ -95,15 +85,20 @@ namespace AdventCode2019
                 y += deltay;
             }
 
+            result.RemoveAll(v => v == (0, 0));
+
             return result;
         }
 
         private Dictionary<(int, int), int> FollowWireDist(string[] wire)
         {
             var path = FollowWire(wire);
+
+            //return path.Select((v, r) => (v, r + 1)).GroupBy(k => k.v).ToDictionary(g => g.Key, g => g.Min(e => e.Item2//));
+
             var results = new Dictionary<(int, int), int>();
             
-            int count = 0;
+            int count = 1; // no start point
             foreach(var step in path)
             {
                 if(!results.ContainsKey(step))
