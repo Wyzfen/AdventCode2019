@@ -30,10 +30,10 @@ namespace AdventCode2019
             Assert.AreEqual(result, 628);
         }
 
-        private bool IsValidPassword(String input) => String.Concat(input.OrderBy(c => c)) == input && // Is ordered
-                input.GroupBy(c => c).Any(g => g.Count() > 1);    // Has at least 2 same
+        private bool IsValidPassword(String input) => input.OrderBy(c => c).SequenceEqual(input) && // Is ordered
+                                                      input.GroupBy(c => c).Any(g => g.Count() > 1);    // Has at least 2 same
 
-        private bool IsValidPasswordB(String input) => String.Concat(input.OrderBy(c => c)) == input && // Is ordered
-                input.GroupBy(c => c).Any(g => g.Count() == 2);   // Has set of exactly two same
+        private bool IsValidPasswordB(String input) => input.OrderBy(c => c).SequenceEqual(input) && // Is ordered
+                                                       input.GroupBy(c => c).Any(g => g.Count() == 2);   // Has set of exactly two same
     }
 }
