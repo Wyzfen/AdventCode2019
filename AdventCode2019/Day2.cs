@@ -10,7 +10,7 @@ namespace AdventCode2019
     [TestClass]
     public class Day2
     {
-        static readonly long[] intcode = new long[] {  1,  0,  0,   3,  1,  1,   2,   3, 1,   3,  4,   3, 1,   5,  0,  3,  2,  1,  6, 19,
+        static readonly int[] intcode = new int[] {  1,  0,  0,   3,  1,  1,   2,   3, 1,   3,  4,   3, 1,   5,  0,  3,  2,  1,  6, 19,
                                                        1, 19,  5,  23,  2, 13,  23,  27, 1,  10, 27,  31, 2,   6, 31, 35,  1,  9, 35, 39,
                                                        2, 10, 39,  43,  1, 43,   9,  47, 1,  47,  9,  51, 2,  10, 51, 55,  1, 55,  9, 59,
                                                        1, 59,  5,  63,  1, 63,   6,  67, 2,   6, 67,  71, 2,  10, 71, 75,  1, 75,  5, 79,
@@ -21,7 +21,7 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
-            long result = Calculate(12, 2, intcode);
+            long result = ShipsComputer.Compute(12, 2, intcode);
 
             Assert.AreEqual(result, 2692315);
         }
@@ -30,11 +30,11 @@ namespace AdventCode2019
         public void Problem2()
         {
             int result = 0;
-            for(int noun = 0; noun <= 99; noun ++)
+            for (int noun = 0; noun <= 99; noun++)
             {
-                for (int verb = 0; verb <= 99; verb ++)
+                for (int verb = 0; verb <= 99; verb++)
                 {
-                    if(Calculate(noun, verb, intcode) == 19690720)
+                    if (ShipsComputer.Compute(noun, verb, intcode) == 19690720)
                     {
                         result = 100 * noun + verb;
                         break;
@@ -44,39 +44,5 @@ namespace AdventCode2019
 
             Assert.AreEqual(result, 9507);
         }
-
-
-        private long Calculate(int noun, int verb, long [] intcode)
-        {
-            intcode = (long[])intcode.Clone(); // Make it so that the program passed in isnt modified
-
-            intcode[1] = noun;
-            intcode[2] = verb;
-
-            for(int sp = 0; sp < intcode.Length; )
-            {
-                switch(intcode[sp])
-                {
-                    case 1: // +
-                        intcode[intcode[sp + 3]] = intcode[intcode[sp + 1]] + intcode[intcode[sp + 2]];
-                        sp += 4;
-                        break;
-
-                    case 2: // *
-                        intcode[intcode[sp + 3]] = intcode[intcode[sp + 1]] * intcode[intcode[sp + 2]];
-                        sp += 4;
-                        break;
-
-                    case 99: // exit
-                        return intcode[0];
-
-                    default: // error
-                        return -1;
-                }
-            }
-
-            return -1;
-        }
-
     }
 }
