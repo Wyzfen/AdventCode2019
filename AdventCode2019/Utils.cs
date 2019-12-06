@@ -31,5 +31,13 @@ namespace AdventCode2019
                 value = func(value);
             }
         }
+
+        public static Dictionary<string, string> SplitFromFile(string filename, char split = ')') =>
+            File.ReadAllLines(filename, Encoding.UTF8).Select(i => i.Split(split)).ToDictionary(s => s[1], s => s[0]);
+
+        public static Dictionary<string, string> SplitFromString(string input, char split = ')') =>
+            input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(i => i.Split(split)).ToDictionary(s => s[1], s => s[0]);
+
+
     }
 }

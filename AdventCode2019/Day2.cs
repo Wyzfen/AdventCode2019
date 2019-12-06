@@ -42,6 +42,8 @@ namespace AdventCode2019
                 }
             }
 
+//            result = Enumerable.Range(0, 10000).First(i => ShipsComputer.Compute(i / 100, i % 100, intcode) == 19690720);
+
             Assert.AreEqual(result, 9507);
         }
     }
