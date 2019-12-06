@@ -13,7 +13,7 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
-            int result = map.Keys.Sum(k => Transfers(k).Count() + 1); // +1 as the transfer list doesn't include you or COM
+            int result = map.Keys.Sum(k => Transfers(k).Count());
 
             Assert.AreEqual(result, 295834);
         }
@@ -38,6 +38,7 @@ namespace AdventCode2019
                 yield return v;
                 v = map[v];
             }
+            yield return v; // return COM as it's orbited too
         }
     }
 }
