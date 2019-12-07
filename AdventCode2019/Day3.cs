@@ -8,7 +8,7 @@ namespace AdventCode2019
     [TestClass]
     public class Day3
     {
-        static readonly string[][] input = Utils.StringsFromFile("day3.txt");
+        static readonly string[][] input = Utils.StringsFromCSVFile("day3.txt");
 
         [TestMethod]
         public void Problem1()

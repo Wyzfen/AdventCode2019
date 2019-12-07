@@ -16,11 +16,15 @@ namespace AdventCode2019
             input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(s => int.Parse(s));
 
         // Returns an array of arrays from a CSV file
-        public static String[][] StringsFromFile(string filename) =>
+        public static String[][] StringsFromCSVFile(string filename) =>
             File.ReadAllLines(filename, Encoding.UTF8).Select(s => s.Split(',')).ToArray();
-        
+
         // Returns an array of arrays from a CSV file
-        public static String[][] StringsFromString(string input) =>
+        public static int[][] IntsFromCSVFile(string filename) =>
+            File.ReadAllLines(filename, Encoding.UTF8).Select(s => s.Split(',').Select(i => int.Parse(i)).ToArray()).ToArray();
+
+        // Returns an array of arrays from a CSV file
+        public static String[][] StringsFromCSVString(string input) =>
             input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(s => s.Split(',')).ToArray();
 
         public static IEnumerable<T> Generate<T>(T value, Func<T, T> func)
@@ -39,5 +43,53 @@ namespace AdventCode2019
             input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(i => i.Split(split)).ToDictionary(s => s[1], s => s[0]);
 
 
+
+        /// <summary>
+        /// Uses factorial notation to give all permutations of input set.
+        /// if input set is in lexigraphical order, the results will be too.
+        /// ie, pass in 012 (the lowest combination of 0,1 and 2) and the next one will be 021
+        /// </summary>
+        /// <param name="set"></param>
+        /// <returns></returns>
+        public static IEnumerable<List<int>> Permutations(IEnumerable<int> set)
+        {
+            int count = set.Count();
+            ulong number = Factorial(count);
+            int[] factors = new int[count];
+
+            for (ulong n = 0; n < number; n++)
+            {
+                List<int> workingSet = new List<int>(set);
+                List<int> result = new List<int>();
+
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    int j = factors[i];
+                    result.Add(workingSet[j]);
+                    workingSet.RemoveAt(j);
+                }
+
+                yield return result;
+
+                for (int index = 1; index < count; index++)
+                {
+                    factors[index]++;
+                    if (factors[index] <= index) break;
+
+                    factors[index] = 0;
+                }
+            }
+        }
+
+        public static ulong Factorial(int n)
+        {
+            ulong value = 1;
+            for (int i = 2; i <= n; i++)
+            {
+                value *= (ulong)i;
+            }
+
+            return value;
+        }
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AdventCode2019
 {
-    static class ShipsComputer
+    public class ShipsComputer
     {
         public enum Mode : int
         {
@@ -27,6 +27,18 @@ namespace AdventCode2019
             Exit = 99,
         }
 
+        private int[] intcode;
+        private int sp = 0;
+
+        public ShipsComputer(int [] intcode)
+        {
+            this.intcode = (int []) intcode.Clone();
+        }
+
+        public int State => intcode[0];
+        public int Noun { set => intcode[1] = value; }
+        public int Verb { set => intcode[2] = value; }
+
         public static int Compute(int[] intcode, List<int> inputs = null) => Compute(null, null, intcode, inputs, out List<int> outputs);
 
         public static int Compute(int noun, int verb, int[] intcode, List<int> inputs = null) => Compute(noun, verb, intcode, inputs, out List<int> outputs);
@@ -35,39 +47,48 @@ namespace AdventCode2019
 
         public static int Compute(int? noun, int? verb, int [] intcode, IList<int> inputs, out List<int> outputs)
         {
-            intcode = (int [])intcode.Clone(); // Make it so that the program passed in isnt modified
-            outputs = new List<int>();
+            ShipsComputer computer = new ShipsComputer(intcode);
 
-            intcode[1] = noun ?? intcode[1];
-            intcode[2] = verb ?? intcode[2];
+            if (noun.HasValue) computer.Noun = noun.Value;
+            if (verb.HasValue) computer.Verb = verb.Value;
 
-            for (int sp = 0; sp < intcode.Length;)
+            outputs = computer.Execute(inputs).ToList();
+
+            return computer.State;
+        }
+        
+        // Run with given inputs, return given outputs, until program stops, or required input missing
+        public IEnumerable<int> Execute(IList<int> inputs)
+        {
+            for (; sp < intcode.Length;)
             {
-                Instruction instruction = (Instruction) (intcode[sp] % 100);
+                Instruction instruction = (Instruction)(intcode[sp] % 100);
                 int parameters = intcode[sp] / 100;
 
                 int Inst(int o) => (parameters == 0 || (Mode)((parameters / (int)Math.Pow(10, o - 1)) % 10) == Mode.Position) ? intcode[intcode[sp + o]] : intcode[sp + o];
 
                 switch (instruction)
                 {
-                    case Instruction.Add: 
+                    case Instruction.Add:
                         intcode[intcode[sp + 3]] = Inst(1) + Inst(2);
                         sp += 4;
                         break;
 
-                    case Instruction.Multiply: 
+                    case Instruction.Multiply:
                         intcode[intcode[sp + 3]] = Inst(1) * Inst(2);
                         sp += 4;
                         break;
 
-                    case Instruction.Input: 
+                    case Instruction.Input:
+                        if(inputs.Count == 0) yield break; // Stop executing if run out of inputs;
+
                         intcode[intcode[sp + 1]] = inputs[0]; // Must always be in position mode
                         inputs.RemoveAt(0);
                         sp += 2;
                         break;
 
                     case Instruction.Output:
-                        outputs.Add(Inst(1)); // Must always be in position mode
+                        yield return Inst(1); // Must always be in position mode
                         sp += 2;
                         break;
 
@@ -90,14 +111,16 @@ namespace AdventCode2019
                         break;
 
                     case Instruction.Exit: // exit
-                        return intcode[0];
+                        yield break;
 
                     default: // error
-                        return -1;
+                        intcode[0] = -1;
+                        yield break;
                 }
             }
 
-            return -1;
+            intcode[0] = -1;
+            yield break;
         }
     }
 }

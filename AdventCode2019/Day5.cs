@@ -10,7 +10,7 @@ namespace AdventCode2019
     [TestClass]
     public class Day5
     {
-        int[] intcode = Utils.StringsFromFile("day5.txt")[0].Select(s => int.Parse(s)).ToArray();
+        int[] intcode = Utils.IntsFromCSVFile("day5.txt")[0];
 
         [TestMethod]
         public void Problem1()
