@@ -57,9 +57,11 @@ namespace AdventCode2019
 
             return computer.State;
         }
-        
+
+        public IEnumerable<int> Execute(IEnumerable<int> inputs) => inputs != null ? inputs.SelectMany(i => Execute(i)) : Execute((int?) null);
+
         // Run with given inputs, return given outputs, until program stops, or required input missing
-        public IEnumerable<int> Execute(IList<int> inputs)
+        public IEnumerable<int> Execute(int? input)
         {
             for (; sp < intcode.Length;)
             {
@@ -81,10 +83,11 @@ namespace AdventCode2019
                         break;
 
                     case Instruction.Input:
-                        if(inputs.Count == 0) yield break; // Stop executing if run out of inputs;
+                        if(! input.HasValue) yield break; // Stop executing if run out of inputs;
 
-                        intcode[intcode[sp + 1]] = inputs[0]; // Must always be in position mode
-                        inputs.RemoveAt(0);
+                        intcode[intcode[sp + 1]] = input.Value; // Must always be in position mode
+                        input = null;
+
                         sp += 2;
                         break;
 

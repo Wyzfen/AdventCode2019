@@ -38,19 +38,17 @@ namespace AdventCode2019
             int Amps(List<int> phases)
             {
                 ShipsComputer[] amps = new ShipsComputer[5].Select(_ => new ShipsComputer(intCode)).ToArray();
+                
+                // pass phase as first input. program will then stall waiting for more inputs
+                for (int ampIndex = 0; ampIndex < 5; ampIndex++)
+                {
+                    amps[ampIndex].Execute( phases[ampIndex] ).Count(); // Count() is so enumerator evaluates
+                }
 
                 int output = 0;
                 while(!amps[0].Completed)
                 {
-                    for (int ampIndex = 0; ampIndex < 5; ampIndex++)
-                    {
-                        var inputs = new List<int> { output };
-                        if (phases != null) inputs.Insert(0, phases[ampIndex]);
-
-                        output = amps[ampIndex].Execute(inputs).Last();
-                    }
-
-                    phases = null;
+                    output = amps.Aggregate(output, (o, a) => a.Execute(o).Last());
                 }
 
                 return output;
