@@ -40,24 +40,20 @@ namespace AdventCode2019
                 ShipsComputer[] amps = new ShipsComputer[5].Select(_ => new ShipsComputer(intCode)).ToArray();
 
                 int output = 0;
-                while(true)
+                while(!amps[0].Completed)
                 {
                     for (int ampIndex = 0; ampIndex < 5; ampIndex++)
                     {
                         var inputs = new List<int> { output };
                         if (phases != null) inputs.Insert(0, phases[ampIndex]);
 
-                        var outputs = amps[ampIndex].Execute(inputs).ToArray();
-                        if (outputs.Count() == 0)
-                        {
-                            return output;
-                        }
-
-                        output = outputs.Last();
+                        output = amps[ampIndex].Execute(inputs).Last();
                     }
 
                     phases = null;
                 }
+
+                return output;
             }
 
             var phasePermutations = Utils.Permutations(new int[] { 5, 6, 7, 8, 9 });

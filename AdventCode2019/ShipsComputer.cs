@@ -35,6 +35,7 @@ namespace AdventCode2019
             this.intcode = (int []) intcode.Clone();
         }
 
+        public bool Completed { get; private set; }
         public int State => intcode[0];
         public int Noun { set => intcode[1] = value; }
         public int Verb { set => intcode[2] = value; }
@@ -111,14 +112,17 @@ namespace AdventCode2019
                         break;
 
                     case Instruction.Exit: // exit
+                        Completed = true;
                         yield break;
 
                     default: // error
+                        Completed = true;
                         intcode[0] = -1;
                         yield break;
                 }
             }
 
+            Completed = true;
             intcode[0] = -1;
             yield break;
         }
