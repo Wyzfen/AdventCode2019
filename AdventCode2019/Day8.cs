@@ -18,10 +18,10 @@ namespace AdventCode2019
             int chunkSize = X * Y;
             var chunks = Enumerable.Range(0, input.Length / chunkSize)
                                    .Select(i => input.Substring(i * chunkSize, chunkSize)).ToList();
-            var counts = chunks.Select(c => c.Count(i => i == '0')).ToList();
-            var select = counts.IndexOf(counts.Min());
 
-            int result = chunks[select].Count(i => i == '1') * chunks[select].Count(i => i == '2');
+            var minChunk = chunks.OrderBy(c => c.Count(i => i == '0')).First();
+
+            int result = minChunk.Count(i => i == '1') * minChunk.Count(i => i == '2');
 
             Assert.AreEqual(result, 1806);
         }
