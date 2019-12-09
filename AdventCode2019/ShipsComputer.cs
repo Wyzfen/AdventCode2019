@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AdventCode2019
 {
@@ -12,6 +10,7 @@ namespace AdventCode2019
         {
             Position,
             Immediate,
+            Relative
         }
 
         public enum Instruction : int
@@ -24,15 +23,18 @@ namespace AdventCode2019
             JumpFalse = 6,
             LessThan = 7,
             Equals = 8,
+            Rebase = 9,
             Exit = 99,
         }
 
         private int[] intcode;
-        private int sp = 0;
+        private int sp = 0; // Stack pointer
+        private int rb = 0; // Relative base
 
         public ShipsComputer(int [] intcode)
         {
             this.intcode = (int []) intcode.Clone();
+            //Array.Resize(ref this.intcode, this.intcode.Length + 1000); // TODO: make this dynamic!
         }
 
         public bool Completed { get; private set; }
@@ -67,8 +69,24 @@ namespace AdventCode2019
             {
                 Instruction instruction = (Instruction)(intcode[sp] % 100);
                 int parameters = intcode[sp] / 100;
+                
+                int Inst(int o)
+                {
+                    if (parameters == 0) return intcode[intcode[sp + o]]; 
 
-                int Inst(int o) => (parameters == 0 || (Mode)((parameters / (int)Math.Pow(10, o - 1)) % 10) == Mode.Position) ? intcode[intcode[sp + o]] : intcode[sp + o];
+                    Mode param = (Mode)((parameters / (int)Math.Pow(10, o - 1)) % 10);
+                    switch (param)
+                    {
+                        case Mode.Immediate:
+                            return intcode[sp + o];
+                        case Mode.Position:
+                            return intcode[intcode[sp + o]];
+                        case Mode.Relative:
+                            return intcode[sp + o] + rb;
+                    }
+
+                    throw new IndexOutOfRangeException();
+                }
 
                 switch (instruction)
                 {
@@ -114,20 +132,21 @@ namespace AdventCode2019
                         sp += 4;
                         break;
 
+                    case Instruction.Rebase:
+                        rb += Inst(1);
+                        sp += 2;
+                        break;
+
                     case Instruction.Exit: // exit
                         Completed = true;
                         yield break;
 
                     default: // error
-                        Completed = true;
-                        intcode[0] = -1;
-                        yield break;
+                        throw new NotImplementedException();
                 }
             }
 
-            Completed = true;
-            intcode[0] = -1;
-            yield break;
+            throw new StackOverflowException();
         }
     }
 }
