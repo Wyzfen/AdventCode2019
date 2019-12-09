@@ -27,14 +27,13 @@ namespace AdventCode2019
             Exit = 99,
         }
 
-        private long [] intcode;
+        private List<long> intcode;
         private int sp = 0; // Stack pointer
         private int rb = 0; // Relative base
 
         public ShipsComputer(long [] intcode)
         {
-            this.intcode = (long []) intcode.Clone();
-            Array.Resize(ref this.intcode, this.intcode.Length + 10000); // TODO: make this dynamic!
+            this.intcode = new List<long>(intcode);
         }
 
         public bool Completed { get; private set; }
@@ -65,7 +64,7 @@ namespace AdventCode2019
         // Run with given inputs, return given outputs, until program stops, or required input missing
         public IEnumerable<long> Execute(long? input)
         {
-            for (; sp < intcode.Length;)
+            for (; sp < intcode.Count;)
             {
                 Instruction instruction = (Instruction)(intcode[sp] % 100);
                 long parameters = intcode[sp] / 100;
@@ -76,19 +75,30 @@ namespace AdventCode2019
                 {
                     Mode param = parameters == 0 ? Mode.Position : (Mode)((parameters / (int)Math.Pow(10, o - 1)) % 10);
 
+                    int index = 0;
                     switch (param)
                     {
                         case Mode.Position:
-                            return (int) intcode[sp + o];
+                            index = (int) intcode[sp + o];
+                            break;
                         case Mode.Immediate:
-                            return sp + o;
+                            index = sp + o;
+                            break;
                         case Mode.Relative:
-                            return (int)(intcode[sp + o]) + rb;
+                            index = (int)(intcode[sp + o]) + rb;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+
                     }
 
-                    // Tried to resize array here based on index, but doesn't work when call inside set indexer. e.g. intcode[Index(3)] = ...
+                    // resize list if necessary
+                    if(index >= intcode.Count)
+                    {
+                        intcode.AddRange(new long[index + 1 - intcode.Count]); // expand list to make room - can't be done with array as Array.Resize moves memory
+                    }
 
-                    throw new ArgumentOutOfRangeException();
+                    return index;
                 }
 
                 switch (instruction)
