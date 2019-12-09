@@ -23,6 +23,9 @@ namespace AdventCode2019
         public static int[][] IntsFromCSVFile(string filename) =>
             File.ReadAllLines(filename, Encoding.UTF8).Select(s => s.Split(',').Select(i => int.Parse(i)).ToArray()).ToArray();
 
+        public static long[][] LongsFromCSVFile(string filename) =>
+            File.ReadAllLines(filename, Encoding.UTF8).Select(s => s.Split(',').Select(i => long.Parse(i)).ToArray()).ToArray();
+
         // Returns an array of arrays from a CSV file
         public static String[][] StringsFromCSVString(string input) =>
             input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(s => s.Split(',')).ToArray();

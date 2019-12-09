@@ -7,18 +7,18 @@ namespace AdventCode2019
     [TestClass]
     public class Day7
     {
-        readonly int [] intCode = Utils.IntsFromCSVFile("day7.txt")[0];
+        readonly long [] intCode = Utils.LongsFromCSVFile("day7.txt")[0];
 
         [TestMethod]
         public void Problem1()
         {
-            int Amps(List<int> phases)
+            long Amps(List<int> phases)
             {
-                int output = 0;
+                long output = 0;
 
                 foreach (int phase in phases)
                 {
-                    int computed = ShipsComputer.Compute(intCode, new List<int> { phase, output }, out var outputs);
+                    long computed = ShipsComputer.Compute(intCode, new List<long> { phase, output }, out var outputs);
                     output = outputs.Last();
                 }
 
@@ -27,7 +27,7 @@ namespace AdventCode2019
 
             var phasePermutations = Utils.Permutations( new int [] { 0, 1, 2, 3, 4 } );
 
-            int result = phasePermutations.Max(p => Amps(p));
+            long result = phasePermutations.Max(p => Amps(p));
 
             Assert.AreEqual(result, 338603);
         }
@@ -35,7 +35,7 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            int Amps(List<int> phases)
+            long Amps(List<int> phases)
             {
                 ShipsComputer[] amps = new ShipsComputer[5].Select(_ => new ShipsComputer(intCode)).ToArray();
                 
@@ -45,7 +45,7 @@ namespace AdventCode2019
                     amps[ampIndex].Execute( phases[ampIndex] ).Count(); // Count() is so enumerator evaluates
                 }
 
-                int output = 0;
+                long output = 0;
                 while(!amps[0].Completed)
                 {
                     output = amps.Aggregate(output, (o, a) => a.Execute(o).Last());
@@ -56,7 +56,7 @@ namespace AdventCode2019
 
             var phasePermutations = Utils.Permutations(new int[] { 5, 6, 7, 8, 9 });
 
-            int result = phasePermutations.Max(p => Amps(p));
+            long result = phasePermutations.Max(p => Amps(p));
 
             Assert.AreEqual(result, 63103596);
         }

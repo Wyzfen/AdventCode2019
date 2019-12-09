@@ -10,12 +10,12 @@ namespace AdventCode2019
     [TestClass]
     public class Day5
     {
-        int[] intcode = Utils.IntsFromCSVFile("day5.txt")[0];
+        long[] intcode = Utils.LongsFromCSVFile("day5.txt")[0];
 
         [TestMethod]
         public void Problem1()
         {
-            int result = ShipsComputer.Compute(intcode, new List<int> { 1 }, out List<int> outputs);
+            long result = ShipsComputer.Compute(intcode, new List<long> { 1 }, out List<long> outputs);
 
             Assert.IsTrue(result > 0);
             Assert.IsTrue(outputs.Take(outputs.Count - 1).All(o => o == 0));
@@ -25,8 +25,8 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            List<int> outputs = null;
-            int result = 0;
+            List<long> outputs = null;
+            long result = 0;
 
             #region Test cases
             /*
@@ -93,7 +93,7 @@ namespace AdventCode2019
             #endregion
 
             // Main program
-            var inputs = new List<int> { 5 };
+            var inputs = new List<long> { 5 };
             result = ShipsComputer.Compute(intcode, inputs, out outputs);
             Assert.AreEqual(outputs.Count, 1);
             Assert.AreEqual(outputs[0], 7616021);
