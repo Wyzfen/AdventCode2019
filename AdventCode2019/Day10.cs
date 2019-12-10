@@ -42,14 +42,54 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            int result = 0;
             var source = (25, 31);
 
-            Assert.AreEqual(result, 4825810);
+            var planets = Parse(input);
+            planets.Remove(source);
+            var angles = planets.Select(p => (p, Angle(source, p))).OrderBy(a => a.Item2).ThenBy(a => Distance(source, a.p)).ToList();
+
+            int index = angles.FindIndex(a => a.Item2 == 0.0);
+            int count = 0;
+            double lastAngle = double.NaN;
+            (int x, int y) target = (0, 0);
+
+            while(count < 200)
+            {
+                if (index >= angles.Count()) index = 0;
+
+                var item = angles[index];
+
+                if (lastAngle == item.Item2)
+                {
+                    index++;
+                    continue;
+                }
+
+                lastAngle = item.Item2;
+                target = item.p;
+                              
+                angles.Remove(item); // removing item has same effect as increasing index!
+                count++;
+
+                System.Diagnostics.Debug.WriteLine($"{count} : {item.p} @ {item.Item2}, {Distance(source, target)}");
+            }
+
+
+            Assert.AreEqual(target.x * 100 + target.y, 512);
         }
 
         (int x, int y) Delta((int x, int y) a, (int x, int y) b) => (a.x - b.x, a.y - b.y);
         (int x, int y) Abs((int x, int y) a) => (Math.Abs(a.x), Math.Abs(a.y));
+
+        private double Angle((int x, int y) start, (int x, int y) end)
+        {
+            return Math.Atan2(end.x - start.x, start.y - end.y); // transposed so it starts from up and goes clockwise, rather than right and anti
+        }
+
+        private int Distance((int x, int y) start, (int x, int y) end)
+        {
+            return (end.x - start.x) * (end.x - start.x) + (end.y - start.y) * (end.y - start.y);
+        }
 
         public static int LCF(int a, int b)
         {
