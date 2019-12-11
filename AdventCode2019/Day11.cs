@@ -14,7 +14,9 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
-            int result = PaintingRobot(0, new ShipsComputer(intCode)).Keys.Count();
+            var output = PaintingRobot(0, new ShipsComputer(intCode));
+            int result = output.Keys.Count();
+            //string[] image = Paint(output);
 
             Assert.AreEqual(result, 2041);
         }
@@ -24,21 +26,7 @@ namespace AdventCode2019
         {
             var output = PaintingRobot(1, new ShipsComputer(intCode));
 
-            int X = output.Keys.Max(k => k.x);
-            int Y = output.Keys.Max(k => k.y);
-
-            StringBuilder[] image = Enumerable.Range(0, Y + 1).Select(_ => new StringBuilder(new string(' ', X + 1))).ToArray();
-            char[] pixels = { '·', '█', ' ' };
-
-            foreach(var item in output)
-            {
-                image[item.Key.y][item.Key.x] = pixels[item.Value];
-            }
-
-            foreach (var line in image)
-            {
-                System.Diagnostics.Debug.WriteLine(line);
-            }
+            string[] image = Paint(output);
 
             Assert.AreEqual(image[0].ToString(), "·████·███··████·███··█··█·████·████·███··· ");
             Assert.AreEqual(image[1].ToString(), " ···█·█··█····█·█··█·█·█··█·······█·█··█···");
@@ -75,6 +63,30 @@ namespace AdventCode2019
             }
 
             return painted;
+        }
+
+        string [] Paint(Dictionary<(int x, int y), int> input)
+        {
+            int maxX = input.Keys.Max(k => k.x);
+            int maxY = input.Keys.Max(k => k.y);
+            int minX = input.Keys.Min(k => k.x);
+            int minY = input.Keys.Min(k => k.y);
+
+
+            StringBuilder[] image = Enumerable.Range(0, maxY - minY + 1).Select(_ => new StringBuilder(new string(' ', maxX - minX + 1))).ToArray();
+            char[] pixels = { '·', '█', ' ' };
+
+            foreach (var item in input)
+            {
+                image[item.Key.y - minY][item.Key.x - minX] = pixels[item.Value];
+            }
+
+            foreach (var line in image)
+            {
+                System.Diagnostics.Debug.WriteLine(line);
+            }
+
+            return image.Select(i => i.ToString()).ToArray();
         }
     }
 }
