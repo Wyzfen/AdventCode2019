@@ -34,7 +34,7 @@ namespace AdventCode2019
             var vis = planets.Select(p => CountVisible(p, planets));
             result = vis.Max();
 
-            System.Diagnostics.Debug.WriteLine($"Max vis @ {planets[vis.ToList().IndexOf(result)]} = {result}");
+            //System.Diagnostics.Debug.WriteLine($"Max vis @ {planets[vis.ToList().IndexOf(result)]} = {result}");
 
             Assert.AreEqual(result, 329);
         }
@@ -42,54 +42,80 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            int result = 0;
             var source = (25, 31);
 
-            Assert.AreEqual(result, 4825810);
+            var planets = Parse(input);
+            planets.Remove(source);
+            var angles = planets.Select(p => (point:p, angle:Angle(source, p))).OrderBy(a => a.angle).ThenBy(a => Distance(source, a.point)).ToList();
+
+            int index = angles.FindIndex(a => a.angle == 0.0);
+            int count = 0;
+            double lastAngle = double.NaN;
+            (int x, int y) target = (0, 0);
+
+            while(count < 200)
+            {
+                if (index >= angles.Count()) index = 0;
+
+                var item = angles[index];
+
+                if (lastAngle == item.angle)
+                {
+                    index++;
+                    continue;
+                }
+
+                lastAngle = item.angle;
+                target = item.point;
+                              
+                angles.Remove(item); // removing item has same effect as increasing index!
+                count++;
+
+                //System.Diagnostics.Debug.WriteLine($"{count} : {item.p} @ {item.Item2}, {Distance(source, target)}");
+            }
+
+
+            Assert.AreEqual(target.x * 100 + target.y, 512);
         }
 
         (int x, int y) Delta((int x, int y) a, (int x, int y) b) => (a.x - b.x, a.y - b.y);
-        (int x, int y) Abs((int x, int y) a) => (Math.Abs(a.x), Math.Abs(a.y));
 
-        public static int LCF(int a, int b)
+        private double Angle((int x, int y) start, (int x, int y) end)
         {
-            while (a > 0)
-            {
-                int temp = b % a;
-                b = a;
-                a = temp;
-            }
-
-            return b;
+            return Math.Atan2(end.x - start.x, start.y - end.y); // transposed so it starts from up and goes clockwise, rather than right and anti
         }
 
-        private bool Obscures((int x, int y) source, (int x, int y) mid, (int x, int y) target)
+        private int Distance((int x, int y) start, (int x, int y) end)
         {
-            var ms = Delta(mid, source);
-            var tm = Delta(target, mid);
+            return (end.x - start.x) * (end.x - start.x) + (end.y - start.y) * (end.y - start.y);
+        }
 
-            if (ms.x != 0 && tm.x != 0 && Math.Sign(ms.x) != Math.Sign(tm.x)) return false;
-            if (ms.y != 0 && tm.y != 0 && Math.Sign(ms.y) != Math.Sign(tm.y)) return false;
+        private static int GCD(uint a, uint b)
+        {
+            while (a != 0 && b != 0)
+            {
+                if (a > b)
+                {
+                    a %= b;
+                }
+                else
+                {
+                    b %= a;
+                }
+            }
 
-            if (ms.x == 0) return tm.x == 0 && Math.Abs(target.y - source.y) >= Math.Abs(ms.y);
-            if (ms.y == 0) return tm.y == 0 && Math.Abs(target.x - source.x) >= Math.Abs(ms.x);
+            return (int)(a == 0 ? b : a);
+        }
 
-
-            return Math.Abs(tm.x) * Math.Abs(ms.y) == Math.Abs(tm.y) * Math.Abs(ms.x);
+        (int x, int y) Simplify((int x, int y) p) 
+        {
+            int gcd = GCD((uint) Math.Abs(p.x), (uint) Math.Abs(p.y));
+            return (p.x / gcd, p.y / gcd);
         }
 
         private int CountVisible((int, int) planet, List<(int, int)> planets)
         {
-            var blocked = new List<(int, int)> { planet };
-
-            foreach(var target in planets.Where(p => p != planet))
-            {
-                var obscured = planets.Where(p => p != planet && p != target).
-                    Where(p => Obscures(planet, target, p));
-                blocked.AddRange(obscured);
-            }
-
-            return planets.Count() - blocked.Distinct().Count();
+            return planets.Where(p => p != planet).Select(p => Simplify(Delta(planet, p))).GroupBy(p => p).Count();
         }
     }
 }
