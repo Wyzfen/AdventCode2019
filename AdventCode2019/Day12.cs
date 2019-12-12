@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -9,90 +8,21 @@ namespace AdventCode2019
     [TestClass]
     public class Day12
     {
-        [DebuggerDisplay("({x}, {y}, {z})")]
-        struct Vector
-        {
-            public int x, y, z;
-
-            public Vector SignedDelta(Vector other) => new Vector
-            {
-                x = x.CompareTo(other.x),
-                y = y.CompareTo(other.y),
-                z = z.CompareTo(other.z),
-            };
-
-            public static Vector operator+ (Vector left, Vector right) =>
-                new Vector { x = left.x + right.x, y = left.y + right.y, z = left.z + right.z };
-
-            public static Vector operator- (Vector left, Vector right) =>
-                new Vector { x = left.x - right.x, y = left.y - right.y, z = left.z - right.z };
-
-            public static bool operator== (Vector left, Vector right) => left.Equals(right);
-            public static bool operator!=(Vector left, Vector right) => !(left == right);
-
-            public override string ToString() => $"({x}, {y}, {z})";
-
-            public override bool Equals(object obj)
-            {
-                if (obj is Vector other)
-                {
-                    return x == other.x && y == other.y && z == other.z;
-                }
-
-                return false;
-            }
-
-            public override int GetHashCode()
-            {
-                return base.GetHashCode();
-            }
-        }
-
-        [DebuggerDisplay("p:{position} v:{velocity}")]
-        struct State
-        {
-            public Vector position;
-            public Vector velocity;
-
-            public override bool Equals(object obj)
-            {
-                if (obj is State state)
-                {
-                    return position == state.position && velocity == state.velocity;
-                }
-
-                return false;
-            }
-
-            public override int GetHashCode()
-            {
-                return base.GetHashCode();
-            }
-        }
-
-        Vector [] positions = new Vector [] { new Vector{ x = -10, y = -10, z = -13 },
-                                              new Vector{ x = 5, y = 5, z = -9 },
-                                              new Vector{ x = 3, y = 8, z = -16},
-                                              new Vector{ x = 1, y = 3, z = -3 } };
-        Vector[] velocities = new Vector[4];
-
-        List<State []> history = new List<State []>();
+        readonly Vector[] input = new Vector[] { new Vector(-10, -10, -13), new Vector(5, 5, -9), new Vector(3, 8, -16), new Vector(1, 3, -3) };
 
         [TestMethod]
         public void Problem1()
         {
-            //var positions = new Vector[] { new Vector { x = -1, y = 0, z = 2},
-            //                                new Vector { x = 2, y = -10, z = -7 },
-            //                                new Vector { x = 4, y = -8, z = 8 },
-            //                                new Vector { x = 3, y = 5, z = -1 }};
+            Vector[] planets = input;
+            Vector[] velocities = new Vector[] { new int[3], new int[3], new int[3], new int[3] };
 
-            for(int i = 0; i < 1000; i++)
+            for (int i = 0; i < 1000; i++)
             {
-                ApplyGravity(positions, velocities);
-                ApplyVelocity(positions, velocities);
+                ApplyGravity(planets, velocities);
+                ApplyVelocity(planets, velocities);
             }
 
-            int result = Energy(positions).Zip(Energy(velocities), (a, b) => a * b).Sum();
+            int result = planets.Zip(velocities, (p, v) => p.Energy * v.Energy).Sum();
 
             Assert.AreEqual(result, 6678);
         }
@@ -100,53 +30,83 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            //var positions = new Vector[] { new Vector { x = -1, y = 0, z = 2},
-            //                                new Vector { x = 2, y = -10, z = -7 },
-            //                                new Vector { x = 4, y = -8, z = 8 },
-            //                                new Vector { x = 3, y = 5, z = -1 }};
+            Vector[] planets = input;
+            Vector[] velocities = new Vector[] { new int[3], new int[3], new int[3], new int[3] };
 
-            history.Add(positions.Zip(velocities, (p, v) => new State { position = p, velocity = v }).ToArray());
 
-            long count = 0;
+            int x = -1, y = -1, z = -1;
+            int count = 0;
 
-            while(true)
+            Vector[] startState = (Vector[])planets.Clone();
+
+            while (x < 0 || y < 0 || z < 0)
             {
+                ApplyGravity(planets, velocities);
+                ApplyVelocity(planets, velocities);
+
                 count++;
 
-                ApplyGravity(positions, velocities);
-                ApplyVelocity(positions, velocities);
+                if (x < 0 && velocities.All(v => v[0] == 0) && planets.Select(p => p[0]).SequenceEqual(startState.Select(p => p[0])))
+                {
+                    x = count;
+                }
 
-                //var newState = positions.Zip(velocities, (p, v) => new State { position = p, velocity = v }).ToArray();
-                //if (history.Any(h => h.SequenceEqual(newState))) break;
-                //history.Add(newState);
-                int result = Energy(positions).Zip(Energy(velocities), (a, b) => a * b).Sum();
-                //Debug.WriteLine($"{count} : {result}");
+                if (y < 0 && velocities.All(v => v[1] == 0) && planets.Select(p => p[1]).SequenceEqual(startState.Select(p => p[1])))
+                {
+                    y = count;
+                }
+
+                if (z < 0 && velocities.All(v => v[2] == 0) && planets.Select(p => p[2]).SequenceEqual(startState.Select(p => p[2])))
+                {
+                    z = count;
+                }
             }
 
-            Assert.AreEqual(count, 4825810);
+            ulong result = Utils.LeastCommonMultiple((ulong)x, (ulong)y, (ulong)z);
+
+            Assert.AreEqual(result, (ulong)496734501382552);
         }
 
-        void ApplyGravity(Vector [] positions, Vector [] velocities)
+
+        public static void ApplyGravity(Vector[] positions, Vector[] velocities)
         {
-            for(int i = 0; i < positions.Length; i++)
+            for (int i = 0; i < positions.Length; i++)
             {
-                for(int j = i + 1; j < positions.Length; j++)
+                for (int j = i + 1; j < positions.Length; j++)
                 {
-                    var delta = positions[i].SignedDelta(positions[j]);
-                    velocities[i] -= delta;
-                    velocities[j] += delta;
+                    var comp = positions[i].CompareTo(positions[j]);
+                    velocities[i] -= comp;
+                    velocities[j] += comp;
                 }
             }
         }
 
-        void ApplyVelocity(Vector[] positions, Vector[] velocities)
+        public static void ApplyVelocity(Vector[] positions, Vector[] velocities)
         {
-            for(int i = 0; i < positions.Length; i++)
+            for (int i = 0; i < positions.Length; i++)
             {
                 positions[i] += velocities[i];
             }
         }
+    }
 
-        IEnumerable<int> Energy(IEnumerable<Vector> items) => items.Select(i => Math.Abs(i.x) + Math.Abs(i.y) + Math.Abs(i.z));
+    public struct Vector
+    {
+        private int[] values;
+
+        public Vector(IEnumerable<int> values) => this.values = values.ToArray();
+
+        public Vector(params int[] values) => this.values = values;
+
+        public static implicit operator Vector(int[] values) => new Vector(values);
+
+        public Vector CompareTo(Vector other) => values.Zip(other.values, (t, o) => t.CompareTo(o)).ToArray();
+
+        public int this[int index] => values[index];
+
+        public static Vector operator +(Vector left, Vector right) => left.values.Zip(right.values, (l, r) => l + r).ToArray();
+        public static Vector operator -(Vector left, Vector right) => left.values.Zip(right.values, (l, r) => l - r).ToArray();
+        
+        public int Energy => values.Sum(v => Math.Abs(v));
     }
 }
