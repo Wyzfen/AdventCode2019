@@ -14,7 +14,7 @@ namespace AdventCode2019
         public void Problem1()
         {
             Vector[] planets = input;
-            Vector[] velocities = new Vector[] { new int[3], new int[3], new int[3], new int[3] };
+            Vector[] velocities = new Vector[4];
 
             for (int i = 0; i < 1000; i++)
             {
@@ -31,8 +31,7 @@ namespace AdventCode2019
         public void Problem2()
         {
             Vector[] planets = input;
-            Vector[] velocities = new Vector[] { new int[3], new int[3], new int[3], new int[3] };
-
+            Vector[] velocities = new Vector[4];
 
             int x = -1, y = -1, z = -1;
             int count = 0;
@@ -46,17 +45,17 @@ namespace AdventCode2019
 
                 count++;
 
-                if (x < 0 && velocities.All(v => v[0] == 0) && planets.Select(p => p[0]).SequenceEqual(startState.Select(p => p[0])))
+                if (x < 0 && velocities.All(v => v.X == 0) && planets.Select(p => p.X).SequenceEqual(startState.Select(p => p.X)))
                 {
                     x = count;
                 }
 
-                if (y < 0 && velocities.All(v => v[1] == 0) && planets.Select(p => p[1]).SequenceEqual(startState.Select(p => p[1])))
+                if (y < 0 && velocities.All(v => v.Y == 0) && planets.Select(p => p.Y).SequenceEqual(startState.Select(p => p.Y)))
                 {
                     y = count;
                 }
 
-                if (z < 0 && velocities.All(v => v[2] == 0) && planets.Select(p => p[2]).SequenceEqual(startState.Select(p => p[2])))
+                if (z < 0 && velocities.All(v => v.Z == 0) && planets.Select(p => p.Z).SequenceEqual(startState.Select(p => p.Z)))
                 {
                     z = count;
                 }
@@ -67,6 +66,24 @@ namespace AdventCode2019
             Assert.AreEqual(result, (ulong)496734501382552);
         }
 
+        public struct Vector
+        {
+            public int X, Y, Z;
+
+            public Vector(int x, int y, int z)
+            {
+                X = x;
+                Y = y;
+                Z = z;
+            }
+
+            public Vector CompareTo(Vector other) => new Vector { X = X.CompareTo(other.X), Y = Y.CompareTo(other.Y), Z = Z.CompareTo(other.Z) };
+
+            public static Vector operator +(Vector first, Vector other) => new Vector(first.X + other.X, first.Y + other.Y, first.Z + other.Z);
+            public static Vector operator -(Vector first, Vector other) => new Vector(first.X - other.X, first.Y - other.Y, first.Z - other.Z);
+
+            public int Energy => Math.Abs(X) + Math.Abs(Y) + Math.Abs(Z);
+        }
 
         public static void ApplyGravity(Vector[] positions, Vector[] velocities)
         {
@@ -88,25 +105,5 @@ namespace AdventCode2019
                 positions[i] += velocities[i];
             }
         }
-    }
-
-    public struct Vector
-    {
-        private int[] values;
-
-        public Vector(IEnumerable<int> values) => this.values = values.ToArray();
-
-        public Vector(params int[] values) => this.values = values;
-
-        public static implicit operator Vector(int[] values) => new Vector(values);
-
-        public Vector CompareTo(Vector other) => values.Zip(other.values, (t, o) => t.CompareTo(o)).ToArray();
-
-        public int this[int index] => values[index];
-
-        public static Vector operator +(Vector left, Vector right) => left.values.Zip(right.values, (l, r) => l + r).ToArray();
-        public static Vector operator -(Vector left, Vector right) => left.values.Zip(right.values, (l, r) => l - r).ToArray();
-        
-        public int Energy => values.Sum(v => Math.Abs(v));
     }
 }
