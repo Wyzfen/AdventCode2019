@@ -9,11 +9,17 @@ namespace AdventCode2019
 {
     public static class Utils
     {
-        public static IEnumerable<int> IntsFromFile(string filename) => 
+        public static IEnumerable<int> IntsFromFile(string filename) =>
             File.ReadAllLines(filename, Encoding.UTF8).Select(s => int.Parse(s));
 
         public static IEnumerable<int> IntsFromString(string input) =>
             input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(s => int.Parse(s));
+
+        public static IEnumerable<String> StringsFromFile(string filename) =>
+            File.ReadAllLines(filename, Encoding.UTF8);
+
+        public static IEnumerable<String> StringsFromString(string input) =>
+            input.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
 
         // Returns an array of arrays from a CSV file
         public static String[][] StringsFromCSVFile(string filename) =>
@@ -32,7 +38,7 @@ namespace AdventCode2019
 
         public static IEnumerable<T> Generate<T>(T value, Func<T, T> func)
         {
-            while(true)
+            while (true)
             {
                 yield return value;
                 value = func(value);
@@ -109,5 +115,20 @@ namespace AdventCode2019
         public static ulong LeastCommonMultiple(ulong a, ulong b) => (a / GreatestCommonFactor(a, b)) * b;
 
         public static ulong LeastCommonMultiple(params ulong[] f) => f.Aggregate((a, b) => LeastCommonMultiple(a, b));
+
+
+        // Split string to tuples
+        public static void Deconstruct<T>(this IList<T> list, out T first, out IList<T> rest)
+        {
+            first = list.Count > 0 ? list[0] : default;
+            rest = list.Skip(1).ToList();
+        }
+
+        public static void Deconstruct<T>(this IList<T> list, out T first, out T second, out IList<T> rest)
+        {
+            first = list.Count > 0 ? list[0] : default;
+            second = list.Count > 1 ? list[1] : default;
+            rest = list.Skip(2).ToList();
+        }
     }
 }
