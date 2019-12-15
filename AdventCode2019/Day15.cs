@@ -52,9 +52,10 @@ namespace AdventCode2019
 
         private List<Location> GenerateMap(bool stopAtTarget = false)
         {
-            var locations = new List<Location> { new Location { X = 0, Y = 0, Tile = Tile.Floor } };
-
             var droid = new ShipsComputer(intCode);
+
+            var locations = new List<Location> { new Location { X = 0, Y = 0, Tile = Tile.Floor, ComputerState = droid.Clone() } };
+
             Location current = locations[0];
             var next = GetUnknownNeighbour(current, locations);
 
@@ -65,14 +66,32 @@ namespace AdventCode2019
                 // Go back to start and look for another
                 if (next == null)
                 {
+                    /*  // Trying to save and reload droid state rather than going back to the beginning.
+                    // for some reason, both parts end up 22 too low ?!
+                    next = GetUnvisitedLocation(locations);
+                    current = GetAdjacentLocations(next, Tile.Floor, locations).OrderBy(l => l.Distance).First();
+
+                    if (current.Distance >= next.Distance)
+                    {
+                        current.Distance = next.Distance - 1;
+                    }
+
+                    Debug.WriteLine($"*: {current} -> {next}");
+
+                    droid = current.ComputerState;
+
+                    path = new Location[] { next };
+
+                    /*/ // Reset droid to start and find path to new location
                     droid = new ShipsComputer(intCode);
                     current = locations[0];
 
                     next = GetUnvisitedLocation(locations);
-                    path = PathFromLocation(next, locations).Reverse();
+                    path = PathFromLocation(next, locations).Reverse(); //*/
                 }
                 else
                 {
+                    Debug.WriteLine($"{current} -> {next}");
                     path = new Location[] { next };
                 }
 
@@ -89,6 +108,7 @@ namespace AdventCode2019
                             break;
                         case 1:
                             location.Tile = Tile.Floor;
+                            location.ComputerState = droid.Clone();
                             current = location;
                             break;
                         case 2:
@@ -100,8 +120,12 @@ namespace AdventCode2019
                     if (stopAtTarget && current.Tile == Tile.Target) break;
                 }
 
+
+                //Paint(locations, new[] { current });
+
                 // Having just moved to the tile, need to add it's neighbours to the list
                 next = current.Tile != Tile.Wall ? GetUnknownNeighbour(current, locations) : null;
+
 
             } while (locations.Any(l => l.Tile == Tile.Unknown));
 
@@ -121,9 +145,7 @@ namespace AdventCode2019
         private Location GetUnknownNeighbour(Location location, List<Location> locations)
         {
             var neighbours = GetAdjacentLocations(location, Tile.Unknown, locations);
-            var next = neighbours.FirstOrDefault(l => l.Tile == Tile.Unknown);
-
-            return next;
+            return neighbours.FirstOrDefault(l => l.Tile == Tile.Unknown);
         }
 
         private IEnumerable<Location> GetAdjacentLocations(Location location, Tile type, List<Location> locations)
@@ -172,12 +194,16 @@ namespace AdventCode2019
             Target = 3
         }
 
-        [DebuggerDisplay("{X},{Y} : {Tile} @ {Distance} ({Explored})")]
+        [DebuggerDisplay("{X},{Y} : {Tile} @ {Distance}")]
         public class Location
         {
             public Tile Tile = Tile.Unknown;
             public int X, Y;
             public int Distance = 0;
+
+            public ShipsComputer ComputerState;
+
+            public override string ToString() => $"{X},{Y} : {Tile} @ {Distance}";
         }
 
         string[] Paint(List<Location> input, IEnumerable<Location> path = null)
@@ -195,7 +221,7 @@ namespace AdventCode2019
                 image[item.Y - minY][item.X - minX] = pixels[(int) item.Tile];
             }
 
-            //image[0 - minY][0 - minX] = 'x';
+            if(image.Length > -minY && image[-minY].Length > -minX) image[0 - minY][0 - minX] = 'x';
 
             if (path != null)
             {

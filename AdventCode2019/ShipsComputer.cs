@@ -36,6 +36,13 @@ namespace AdventCode2019
             this.intcode = new List<long>(intcode);
         }
 
+        public ShipsComputer Clone() => new ShipsComputer(intcode.ToArray())
+        {
+            sp = sp,
+            rb = rb,
+            Completed = Completed
+        };
+
         public bool Completed { get; private set; }
         public long State => intcode[0];
         public long Noun { set => intcode[1] = value; }
