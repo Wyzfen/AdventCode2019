@@ -15,52 +15,66 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
+            var locations = GenerateMap(stopAtTarget:true);
+
+            Paint(locations);
+
+            var target = locations.First(l => l.Tile == Tile.Target);
+            Assert.AreEqual(target.Tile, Tile.Target);
+            Assert.AreEqual(target.Distance, 272);
+        }
+
+        [TestMethod]
+        public void Problem2()
+        {
+            var locations = GenerateMap(stopAtTarget: true);
+
+            Paint(locations);
+
+            var start = locations.First(l => l.Tile == Tile.Target);
+
+            //locations.RemoveAll(l => l.Tile == Tile.Wall);
+
+            List<Location> current = new List<Location> { start };
+
+            int count = 0;
+            while(locations.Count(l => l.Tile == Tile.Floor) > 0)
+            {
+                current.ForEach(l => l.Tile = Tile.Target);
+
+                current = current.SelectMany(c => GetAdjacentLocations(c, Tile.Floor, locations)).Distinct().ToList();
+                //Paint(locations, current);
+                count++;
+            }
+
+            Assert.AreEqual(count - 1, 398);
+        }
+
+        private List<Location> GenerateMap(bool stopAtTarget = false)
+        {
             var locations = new List<Location> { new Location { X = 0, Y = 0, Tile = Tile.Floor } };
 
             var droid = new ShipsComputer(intCode);
             Location current = locations[0];
+            var next = GetUnknownNeighbour(current, locations);
 
-            while(current.Tile != Tile.Target) // !locations.Any(l => l.Tile == Tile.Target))
+            do
             {
                 IEnumerable<Location> path = null;
 
-                // See if there's a position next to us
-                var next = GetUnknownNeighbour(current, locations);
-                if(next != null)
-                {
-                    path = new Location[] { next };
-                }
-
                 // Go back to start and look for another
                 if (next == null)
-                {   
+                {
                     droid = new ShipsComputer(intCode);
                     current = locations[0];
 
                     next = GetUnvisitedLocation(locations);
-                    if (next != null)
-                    {
-                        path = PathFromLocation(next, locations).Reverse();
-                    }
+                    path = PathFromLocation(next, locations).Reverse();
                 }
-
-                //// Revisit any that aren't marked as explored - shouldn't be necessary, as they're not marked as all their neighbours are
-                //if (path == null)
-                //{
-                //    foreach(var unexplored in locations.Where(l => !l.Explored))
-                //    {
-                //        var next = GetUnknownNeighbour(unexplored, locations);
-                //        if (next != null)
-                //        {
-                //            path = new Location[] { next };
-                //            break;
-                //        }
-                //    }
-                //}
-
-
-                //if (path == null) break; // Should never happen
-
+                else
+                {
+                    path = new Location[] { next };
+                }
 
                 // Follow the path to the location
                 foreach (Location location in path)
@@ -68,11 +82,10 @@ namespace AdventCode2019
                     var input = GetMove(location, current, locations); // will only move through known locations
                     var output = droid.Execute(input).ToList();
 
-                    switch(output.First())
+                    switch (output.First())
                     {
                         case 0:
                             location.Tile = Tile.Wall;
-                            location.Explored = true;
                             break;
                         case 1:
                             location.Tile = Tile.Floor;
@@ -84,21 +97,15 @@ namespace AdventCode2019
                             break;
                     }
 
-                    if (current.Tile == Tile.Target) break;
+                    if (stopAtTarget && current.Tile == Tile.Target) break;
                 }
-            }
 
-            Paint(locations);
+                // Having just moved to the tile, need to add it's neighbours to the list
+                next = current.Tile != Tile.Wall ? GetUnknownNeighbour(current, locations) : null;
 
+            } while (locations.Any(l => l.Tile == Tile.Unknown));
 
-            Assert.AreEqual(current.Tile, Tile.Target);
-            Assert.AreEqual(current.Distance, 272);
-        }
-
-
-        [TestMethod]
-        public void Problem2()
-        {
+            return locations;
         }
 
         private int GetMove(Location location, Location current, List<Location> locations)
@@ -113,12 +120,8 @@ namespace AdventCode2019
 
         private Location GetUnknownNeighbour(Location location, List<Location> locations)
         {
-            if (location.Explored) return null;
-
             var neighbours = GetAdjacentLocations(location, Tile.Unknown, locations);
             var next = neighbours.FirstOrDefault(l => l.Tile == Tile.Unknown);
-
-            if (next == null) location.Explored = true;
 
             return next;
         }
@@ -175,8 +178,6 @@ namespace AdventCode2019
             public Tile Tile = Tile.Unknown;
             public int X, Y;
             public int Distance = 0;
-
-            public bool Explored = false; // Set when it and all it's neighbours are visited
         }
 
         string[] Paint(List<Location> input, IEnumerable<Location> path = null)
@@ -187,14 +188,14 @@ namespace AdventCode2019
             int minY = input.Min(k => k.Y);
 
             StringBuilder[] image = Enumerable.Range(0, maxY - minY + 1).Select(_ => new StringBuilder(new string(' ', maxX - minX + 1))).ToArray();
-            char[] pixels = { ':', '·', '█', '*' };
+            char[] pixels = { ':', '·', '#', 'O' };
 
             foreach (var item in input)
             {
                 image[item.Y - minY][item.X - minX] = pixels[(int) item.Tile];
             }
 
-            image[0 - minY][0 - minX] = 'x';
+            //image[0 - minY][0 - minX] = 'x';
 
             if (path != null)
             {
@@ -203,7 +204,7 @@ namespace AdventCode2019
                     image[location.Y - minY][location.X - minX] = '+';
                 }
 
-                image[path.Last().Y - minY][path.Last().X - minX] = '@';
+                //image[path.Last().Y - minY][path.Last().X - minX] = '@';
             }
 
             foreach (var line in image)
