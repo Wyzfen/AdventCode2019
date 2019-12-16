@@ -45,6 +45,14 @@ namespace AdventCode2019
             }
         }
 
+        public static IEnumerable<T> TakeLast<T>(this IEnumerable<T> source, int N)
+        {
+            return source.Skip(Math.Max(0, source.Count() - N));
+        }
+
+        public static int ToInt(this IEnumerable<int> source) =>
+             source.Select(d => Math.Abs(d) % 10).Aggregate(0, (t, n) => t * 10 + n);
+
         public static Dictionary<string, string> SplitFromFile(string filename, char split = ')') =>
             File.ReadAllLines(filename, Encoding.UTF8).Select(i => i.Split(split)).ToDictionary(s => s[1], s => s[0]);
 
