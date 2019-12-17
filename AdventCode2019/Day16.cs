@@ -29,14 +29,25 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            IEnumerable<int> input = Enumerable.Repeat(values, 10000).SelectMany(e => e);
-            var output = FFT(input);
+            int [] input = Enumerable.Repeat(values, 10000).SelectMany(e => e).ToArray();
+            int [] output = new int[input.Count()];
 
             int offset = input.Take(7).ToInt();
+            for (int phase = 0; phase < 100; phase++)
+            {
+                long sum = 0;
+                for (int i = input.Count() - 1; i >= offset; i--)
+                {
+                    sum += input[i];
+                    output[i] = (int)Math.Abs(sum) % 10;
+                }
+
+                input = output;
+            }
 
             int result = output.Skip(offset).Take(8).ToInt();
 
-            Assert.AreEqual(result, 4825810);
+            Assert.AreEqual(result, 55005000);
         }
 
         private static IEnumerable<int> FFT(IEnumerable<int> input)
