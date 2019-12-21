@@ -139,4 +139,20 @@ namespace AdventCode2019
             rest = list.Skip(2).ToList();
         }
     }
+
+    public class MultiMap<V> : Dictionary<string, List<V>>
+    {
+        public void Add(string key, V value)
+        {
+            // Add a key.
+            if (TryGetValue(key, out List<V> list))
+            {
+                list.Add(value);
+            }
+            else
+            {
+                Add(key, new List<V> { value });
+            }
+        }
+    }
 }
