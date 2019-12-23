@@ -120,6 +120,23 @@ namespace AdventCode2019
             return a;
         }
 
+        public static ulong GCD(ulong a, ulong b)
+        {
+            while (a != 0 && b != 0)
+            {
+                if (a > b)
+                {
+                    a %= b;
+                }
+                else
+                {
+                    b %= a;
+                }
+            }
+
+            return a == 0 ? b : a;
+        }
+
         public static ulong LeastCommonMultiple(ulong a, ulong b) => (a / GreatestCommonFactor(a, b)) * b;
 
         public static ulong LeastCommonMultiple(params ulong[] f) => f.Aggregate((a, b) => LeastCommonMultiple(a, b));
