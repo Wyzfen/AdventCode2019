@@ -15,32 +15,32 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
-            //var maze = new string[]
-            //{
-            //   "#################",
-            //   "#i.G..c...e..H.p#",
-            //   "########.########",
-            //   "#j.A..b...f..D.o#",
-            //   "########@########",
-            //   "#k.E..a...g..B.n#",
-            //   "########.########",
-            //   "#l.F..d...h..C.m#",
-            //   "#################",
+            var maze = new string[]
+            {
+               "#################",
+               "#i.G..c...e..H.p#",
+               "########.########",
+               "#j.A..b...f..D.o#",
+               "########@########",
+               "#k.E..a...g..B.n#",
+               "########.########",
+               "#l.F..d...h..C.m#",
+               "#################",
 
-            //   //"########################",
-            //   //"#...............b.C.D.f#",
-            //   //"#.######################",
-            //   //"#.....@.a.B.c.d.A.e.F.g#",
-            //   //"########################",
+               //"########################",
+               //"#...............b.C.D.f#",
+               //"#.######################",
+               //"#.....@.a.B.c.d.A.e.F.g#",
+               //"########################",
 
-            //   //"########################",
-            //   //"#@..............ac.GI.b#",
-            //   //"###d#e#f################",
-            //   //"###A#B#C################",
-            //   //"###g#h#i################",
-            //   //"########################",
-            //};
-            
+               //"########################",
+               //"#@..............ac.GI.b#",
+               //"###d#e#f################",
+               //"###A#B#C################",
+               //"###g#h#i################",
+               //"########################",
+            };
+
 
             // Get coordinates of all non-walls and non-floors
             var things = FindThings(maze);
@@ -138,7 +138,7 @@ namespace AdventCode2019
 
                 var open = GetAdjacentLocations(maze, location);
                 var visited = new List<(int x, int y)> { location };
-                int distance = 0;
+                int distance = 1;
 
                 while (missing.Any())
                 {
@@ -184,13 +184,13 @@ namespace AdventCode2019
         {
             var targetLength = things.Count();
 
-            var open = things.Where(t => !t.Blockers.Except(preVisit).Any() && t.Parent == start && t.Thing == 'f').OrderBy(t => t.Distance).Reverse();
+            var open = things.Where(t => !t.Blockers.Except(preVisit).Any() && t.Parent == start).OrderBy(t => t.Distance).Reverse();
             var searches = new List<BFSSearch> { new BFSSearch { open = open.ToList(), node = start } };//open.Select(o => new BFSSearch { open = open.ToList(), node = o }).ToList();
 
             int solutionCount = 0;
             int minResult = int.MaxValue;
 
-            while(searches.First().visited.Length < targetLength /*&& solutionCount < 10000*/)
+            while(searches.Any() && searches.First().visited.Length < targetLength /*&& solutionCount < 10000*/)
             {
                 var search = searches.First();
 
@@ -208,9 +208,9 @@ namespace AdventCode2019
                     searches.Remove(search);
                 }
 
-                Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
+                // Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
 
-                var visited = search.visited + node.Thing;
+                var visited = search.visited + node.Thing; //String.Concat((search.visited + node.Thing).ToLower().OrderBy(c => c));
                 var distance = measurements[(search.node, node)] + search.distance;
 
                 if (distance < minResult)
@@ -279,7 +279,7 @@ namespace AdventCode2019
         {
             var open = GetAdjacentLocations(maze, start.Location).Select(o => (location:o, parent:start, blockers:"")).ToList();
             var visited = new List<(int x, int y)>();
-            int distance = 0;
+            int distance = 1;
 
             while(open.Count() > 0)
             {
@@ -314,7 +314,7 @@ namespace AdventCode2019
                             node = parent; // don't replace the parent
                         }
 
-                        open[i] = (location, node, blockers); // all subsequent items will use this new parent
+                        open[i] = (location, node, String.Concat(blockers.ToLower().OrderBy(c => c))); // all subsequent items will use this new parent
                     }
 
                     visited.Add(location);
