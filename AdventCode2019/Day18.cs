@@ -15,31 +15,31 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
-            var maze = new string[]
-            {
-               "#################",
-               "#i.G..c...e..H.p#",
-               "########.########",
-               "#j.A..b...f..D.o#",
-               "########@########",
-               "#k.E..a...g..B.n#",
-               "########.########",
-               "#l.F..d...h..C.m#",
-               "#################",
+            //var maze = new string[]
+            //{
+            //   //"#################",
+            //   //"#i.G..c...e..H.p#",
+            //   //"########.########",
+            //   //"#j.A..b...f..D.o#",
+            //   //"########@########",
+            //   //"#k.E..a...g..B.n#",
+            //   //"########.########",
+            //   //"#l.F..d...h..C.m#",
+            //   //"#################",
 
-               //"########################",
-               //"#...............b.C.D.f#",
-               //"#.######################",
-               //"#.....@.a.B.c.d.A.e.F.g#",
-               //"########################",
+            ////   //"########################",
+            ////   //"#...............b.C.D.f#",
+            ////   //"#.######################",
+            ////   //"#.....@.a.B.c.d.A.e.F.g#",
+            ////   //"########################",
 
-               //"########################",
-               //"#@..............ac.GI.b#",
-               //"###d#e#f################",
-               //"###A#B#C################",
-               //"###g#h#i################",
-               //"########################",
-            };
+            //   "########################",
+            //   "#@..............ac.GI.b#",
+            //   "###d#e#f################",
+            //   "###A#B#C################",
+            //   "###g#h#i################",
+            //   "########################",
+            //};
 
 
             // Get coordinates of all non-walls and non-floors
@@ -60,23 +60,9 @@ namespace AdventCode2019
             CalculateDistances(things, measurements, startNode);
             
             // Solve problem
+            long result = SolveBFS(startNode, things, measurements);
 
-
-            // Now now how to get to every node, and the distance from their parent
-            //var visited = "";
-            //var visible = things.Where(t => t.Parent == startNode);
-            //var lookup = visible.ToLookup(t => t.Blockers.Except(visited).Any(), t => t);
-
-            //var open = lookup[false];
-            //var closed = lookup[true];
-
-            //long result = long.MaxValue;
-
-            //Solve(startNode, open, closed, visited, 0, things, measurements, ref result);
-
-            long result = SolveBFS(startNode, things, measurements, "fnagxoels");
-
-            Assert.AreEqual(result, 6074); // fnagxoezkmwpuvtdlsirqjyhcb
+            Assert.AreEqual(result, 5520); // fnagxoezkmwpuvtdlsirqjyhcb
         }
 
         [TestMethod]
@@ -189,6 +175,9 @@ namespace AdventCode2019
 
             int solutionCount = 0;
             int minResult = int.MaxValue;
+            int culledPrevious = 0;
+
+            Dictionary<String, int> previous = new Dictionary<string, int>();
 
             while(searches.Any() && searches.First().visited.Length < targetLength /*&& solutionCount < 10000*/)
             {
@@ -208,13 +197,15 @@ namespace AdventCode2019
                     searches.Remove(search);
                 }
 
-                // Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
+                //Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
 
                 var visited = search.visited + node.Thing; //String.Concat((search.visited + node.Thing).ToLower().OrderBy(c => c));
                 var distance = measurements[(search.node, node)] + search.distance;
-
+                
                 if (distance < minResult)
                 {
+                    var previousKey = String.Concat(search.visited.OrderBy(c => c)) + node.Thing;
+
                     if (visited.Length == targetLength)
                     {
                         if (minResult > distance)
@@ -226,8 +217,15 @@ namespace AdventCode2019
 
                         solutionCount++;
                     }
+                    else if(previous.TryGetValue(previousKey, out int previousDistance) && previousDistance <= distance)
+                    {
+                        culledPrevious++;
+                        searches.Remove(search);
+                    }
                     else
                     {
+                        previous[previousKey] = distance;
+
                         var newSearch = new BFSSearch { node = node, open = new List<Node>(search.open), visited = visited, distance = distance };
                         newSearch.Update(things, measurements);
 
