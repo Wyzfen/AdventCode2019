@@ -68,7 +68,7 @@ namespace AdventCode2019
 
         public IEnumerable<long> Execute(IEnumerable<long> inputs) => inputs != null ? inputs.SelectMany(i => Execute(i)) : Execute((long?) null);
 
-        public IEnumerable<long> Execute(string input) => Execute(input.Select(c => (long)c));
+        public IEnumerable<long> Execute(string input) => input != null ? Execute(input.Select(c => (long)c)) : Execute((long?) null);
 
         // Run with given inputs, return given outputs, until program stops, or required input missing
         public IEnumerable<long> Execute(long? input = null)

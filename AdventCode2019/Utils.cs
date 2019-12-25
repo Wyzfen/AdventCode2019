@@ -98,6 +98,32 @@ namespace AdventCode2019
             }
         }
 
+        /// <summary>
+        /// Select (choose) from (set) where order doesnt matter
+        /// </summary>
+        /// <param name="set"></param>
+        /// <param name="choose"></param>
+        /// <returns></returns>
+        public static IEnumerable<List<int>> Combinations(IEnumerable<int> input, int choose)
+        {
+            List<int> set = new List<int>(input);
+            for (int i = 0; i < set.Count(); i++)
+            {
+                // only want 1 character, just return this one
+                if (choose == 1)
+                    yield return new List<int>(new int[] { set[i] });
+
+                // want more than one character, return this one plus all combinations one shorter
+                // only use characters after the current one for the rest of the combinations
+                else
+                    foreach (List<int> next in Combinations(set.GetRange(i + 1, set.Count - (i + 1)), choose - 1))
+                    {
+                        next.Add(set[i]);
+                        yield return next;
+                    }
+            }
+        }
+
         public static ulong Factorial(int n)
         {
             ulong value = 1;

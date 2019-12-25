@@ -51,6 +51,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Day25.cs" />
     <Compile Include="Day24.cs" />
     <Compile Include="Day23.cs" />
     <Compile Include="Day22.cs" />
@@ -124,6 +125,9 @@
     </Content>
     <Content Include="day23.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="day25.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="day3.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

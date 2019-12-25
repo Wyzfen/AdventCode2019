@@ -40,32 +40,27 @@ namespace AdventCode2019
             //   //"###g#h#i################",
             //   //"########################",
             //};
+            
 
+            // Get coordinates of all non-walls and non-floors
             var things = FindThings(maze);
 
             var startNode = things.First(t => t.Thing == '@');
             things.Remove(startNode);
 
-            // Maze is in quarters; do each quadrant separately.
-            Set(ref maze[startNode.Y], startNode.X - 1, '#');
-            Set(ref maze[startNode.Y], startNode.X + 1, '#');
-            Set(ref maze[startNode.Y - 1], startNode.X, '#');
-            Set(ref maze[startNode.Y + 1], startNode.X, '#');
+            // BFS the maze, linking nodes and setting blockers as go.
+            LinkNodesBFS(startNode, maze, things);
 
-            LinkThings(startNode, (startNode.X - 1, startNode.Y - 1), startNode.Location, 2, "", maze, things); // startNode.Location is basically empty
-            LinkThings(startNode, (startNode.X + 1, startNode.Y - 1), startNode.Location, 2, "", maze, things); // startNode.Location is basically empty
-            LinkThings(startNode, (startNode.X - 1, startNode.Y + 1), startNode.Location, 2, "", maze, things); // startNode.Location is basically empty
-            LinkThings(startNode, (startNode.X + 1, startNode.Y + 1), startNode.Location, 2, "", maze, things); // startNode.Location is basically empty
-
-            //Set(ref maze[startNode.Y], startNode.X - 1, '.');
-            //Set(ref maze[startNode.Y], startNode.X + 1, '.');
-            //Set(ref maze[startNode.Y - 1], startNode.X, '.');
-            //Set(ref maze[startNode.Y + 1], startNode.X, '.');
-
-            //LinkThings(startNode, startNode.Location, startNode.Location, 0, "", maze, things);
             things.RemoveAll(n => n.Thing < 'a');
 
-            var measurements = new Dictionary<(Node, Node), int>(); // MeasureThings(things.Where(t => t.Parent == startNode).ToList(), maze);
+            // Work out distances between start nodes (those that link to @)
+            var measurements = RootDistances(things.Where(t => t.Parent == startNode).ToList(), maze);
+
+            // Work out distances between all nodes for convenience
+            CalculateDistances(things, measurements, startNode);
+            
+            // Solve problem
+
 
             // Now now how to get to every node, and the distance from their parent
             //var visited = "";
@@ -91,6 +86,83 @@ namespace AdventCode2019
             Assert.AreEqual(result, 1143770635);
         }
 
+        private void CalculateDistances(List<Node> nodes, Dictionary<(Node from, Node to), int> measurements, Node startNode)
+        {
+            List<Node> toSet = new List<Node>(nodes.Except(nodes.Where(t => t.Parent == startNode)));
+            List<Node> available = new List<Node>(nodes.Except(toSet));
+
+            while(toSet.Any())
+            {
+                var settable = toSet.Where(n => available.Contains(n.Parent)).ToList();
+                foreach(var item in settable)
+                {
+                    toSet.Remove(item);
+
+                    measurements[(item, startNode)] = item.Distance;
+                    measurements[(startNode, item)] = item.Distance;
+
+                    var parent = item.Parent;
+                    var distance = item.Distance - parent.Distance;
+
+                    measurements.Add((item, item.Parent), distance);
+                    measurements.Add((item.Parent, item), distance);
+
+                    foreach (var otherItem in available.Where(a => a != parent))
+                    {
+                        distance = measurements[(parent, otherItem)] - parent.Distance + item.Distance;
+                        //Debug.WriteLine($"Connect {item}, {otherItem}. Distance = {distance}");
+
+                        measurements.Add((item, otherItem), distance);
+                        measurements.Add((otherItem, item), distance);
+                    }
+
+                    available.Add(item);
+                }
+            }
+        }
+
+        private Dictionary<(Node, Node), int> RootDistances(IList<Node> nodes, string [] maze)
+        {
+            var distances = new Dictionary<(Node, Node), int>();
+
+            for(int i = 0; i < nodes.Count(); i++)
+            {
+                // BFS until find other nodes on list
+                var node = nodes[i];
+                var missing = nodes.Except( nodes.Take(i + 1) );
+                var location = node.Location;
+
+                // add root connections
+                distances[(node, node.Parent)] = node.Distance;
+                distances[(node.Parent, node)] = node.Distance;
+
+                var open = GetAdjacentLocations(maze, location);
+                var visited = new List<(int x, int y)> { location };
+                int distance = 0;
+
+                while (missing.Any())
+                {
+                    Debug.Assert(open.Any());
+
+                    distance++;
+
+                    open = open.SelectMany(o => GetAdjacentLocations(maze, o)).Distinct().Except(visited).ToList();
+
+                    var found = missing.Where(n => open.Contains(n.Location));
+                    foreach(var f in found)
+                    {
+                        distances.Add((node, f), distance);
+                        distances.Add((f, node), distance);
+                    }
+
+                    missing = missing.Except(found).ToList();
+                    visited.AddRange(open);
+                }
+            }
+
+            return distances;
+        }
+
         [DebuggerDisplay("{node} : {visited} with {open.Count} open [{distance}]")]
         private class BFSSearch
         {
@@ -103,16 +175,16 @@ namespace AdventCode2019
             {
                 var available = things.Where(t => t != node && !t.Blockers.Except(visited).Any() && !visited.Contains(t.Thing));
                 var group = available.ToLookup(a => a.Parent == node); // prioritise those with this as parent
-                open = group[true].OrderBy(t => DistanceBetween(node, t, measurements)).Concat(group[false].OrderBy(t => DistanceBetween(node, t, measurements))).ToList();
+                open = group[true].OrderBy(t => measurements[(t, node)]).Concat(group[false].OrderBy(t => measurements[(t, node)])).ToList();
             }
         }
 
 
         public long SolveBFS(Node start, IEnumerable<Node> things, Dictionary<(Node, Node), int> measurements, string preVisit = "")
         {
-            var targetLength = things.Where(t => t.Thing >= 'a').Count();
+            var targetLength = things.Count();
 
-            var open = things.Where(t => !t.Blockers.Except(preVisit).Any() && t.Parent == start && t.Thing == 'f').OrderBy(t => DistanceBetween(start, t, measurements)).Reverse();
+            var open = things.Where(t => !t.Blockers.Except(preVisit).Any() && t.Parent == start && t.Thing == 'f').OrderBy(t => t.Distance).Reverse();
             var searches = new List<BFSSearch> { new BFSSearch { open = open.ToList(), node = start } };//open.Select(o => new BFSSearch { open = open.ToList(), node = o }).ToList();
 
             int solutionCount = 0;
@@ -136,10 +208,10 @@ namespace AdventCode2019
                     searches.Remove(search);
                 }
 
-                //Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
+                Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
 
                 var visited = search.visited + node.Thing;
-                var distance = DistanceBetween(search.node, node, measurements) + search.distance;
+                var distance = measurements[(search.node, node)] + search.distance;
 
                 if (distance < minResult)
                 {
@@ -180,124 +252,6 @@ namespace AdventCode2019
             return minResult;
         }
 
-        public void Solve(Node previous, IEnumerable<Node> open, IEnumerable<Node> closed, string visited, long distance, IEnumerable<Node> things, Dictionary<(Node, Node), int> measurements, ref long minDistance)
-        {
-            // TODO: rather than using depth-first search, should use breadth-first
-            // Have a list of traversals, sorted by distance travelled - pick the shortest distance, and process the nearest node. This then gets added to the list of traversals.
-            // maybe only need to store visited list and distance - can get open list from this, then take the nearest to the current location (end of visited list)
-            // only need to check nearest on open list but still worth cacheing it for each option
-            /* e.g. @->a = 2, @->b = 4, a->b = 6
-             list = @+a [2], @+b [4]
-              @+a : visit a [2]
-             list = @+b [4], a+b [10]
-              @+b : visit b [4]
-             list = b+a [10], a+b [10]
-              b+a : visit a [10]
-             list = ba [10], a+b [10]   
-              return ab
-            */
-            if (closed.Count() == 0 && open.Count() == 0)
-            {
-                minDistance = Math.Min(minDistance, distance);
-                Debug.WriteLine($"{visited} takes {distance}");
-            }
-            else
-            {
-                foreach (var node in open)
-                {
-                    var newDistance = DistanceBetween(node, previous, measurements) + distance;
-                    if (newDistance >= minDistance) continue;
-
-                    var children = things.Where(t => t.Parent == node);
-                    string newVisited = visited + node.Thing;
-                    var lookup = children.Union(closed).ToLookup(t => t.Blockers.Except(newVisited).Any(), t => t);
-
-                    var newOpen = lookup[false].Union(open.Except(new[] { node }));
-                    var newClosed = lookup[true];
-
-                    Solve(node, newOpen, newClosed, newVisited, newDistance, things, measurements, ref minDistance);
-                }
-            }
-        }
-
-        private static int DistanceBetween(Node a, Node b, Dictionary<(Node, Node), int> measurements)
-        {
-            // TODO: once know distance between all nodes that touch the root, can work out distance between all nodes; work out distance to the root-adjacent for each, then add the root adjacent
-            // can pre-calculate this and cache it.
-
-            int distance = 0;
-
-            if (!measurements.TryGetValue((a, b), out distance) && !measurements.TryGetValue((b, a), out distance))
-            {
-                // Find common parent
-                Node common = GetCommonNode(a, b);
-
-                // Distance is sum of distances to parents (or just distance if it is to a parent)
-                distance = ChildDistance(a, common);
-                distance += ChildDistance(b, common);
-
-                // Need to handle case where common is @ as path will rarely pass through there
-                if (common.Parent == null)
-                {
-                    // If the nodes are in different quadrants, adjust distance
-                    if (a.X < common.X == b.X < common.X) distance -= 2;
-                    if (a.Y < common.Y == b.Y < common.Y) distance -= 2;
-                }
-            }
-
-            return distance;
-        }
-
-        private static int ChildDistance(Node child, Node parent)
-        {
-            Node current = child;
-            int distance = 0;
-
-            while (current != parent)
-            {
-                distance += current.Distance;
-                current = current.Parent;
-            }
-
-            return distance;
-        }
-
-        private static Node GetCommonNode(Node a, Node b)
-        {
-            var listA = new List<Node> { a };
-            var listB = new List<Node> { b };
-
-            // TODO: could do with a single list, as once traversal of list b hits a common node, we're done.
-            while(a.Parent != null)
-            {
-                listA.Add(a.Parent);
-                a = a.Parent;
-            }
-
-            while (b.Parent != null)
-            {
-                listB.Add(b.Parent);
-                b = b.Parent;
-            }
-
-            var intersect = listA.Intersect(listB); // now has all nodes in common
-            var result = intersect.First();
-
-            if(result.Parent == null) // root of graph - not used here!
-            {
-                // TODO
-            }
-            
-            return intersect.First(); // MUST be a common ancestor
-        }
-
-        private void Set(ref string input, int index, char c)
-        {
-            var sb = new StringBuilder(input);
-            sb[index] = c;
-            input = sb.ToString();
-        }
-
         private List<Node> FindThings(string[] maze)
             => maze.SelectMany((row, y) => row.Select((c, x) => new Node { X = x, Y = y, Thing = c }))
                                               .Where(n => n.Thing >= '@').ToList();
@@ -321,78 +275,54 @@ namespace AdventCode2019
             public (int x, int y) Location => (X, Y);
         }
 
-        private void LinkThings(Node parent, (int x, int y) location, (int x, int y) previous, int distance, string blockers, string [] maze, List<Node> things)
+        private void LinkNodesBFS(Node start, string [] maze, IEnumerable<Node> things)
         {
-            foreach(var newLocation in GetAdjacentLocations(maze, location, previous))
+            var open = GetAdjacentLocations(maze, start.Location).Select(o => (location:o, parent:start, blockers:"")).ToList();
+            var visited = new List<(int x, int y)>();
+            int distance = 0;
+
+            while(open.Count() > 0)
             {
-                var node = things.FirstOrDefault(t => t.X == newLocation.x && t.Y == newLocation.y);
+                distance++;
 
-                if (node != null)
-                {
-                    node.Distance = distance + 1;
-                    node.Parent = parent;
-                    node.Blockers = blockers.ToLower();
+                open = open.SelectMany(o => GetAdjacentLocations(maze, o.location).Select(l => (l, o.parent, o.blockers))).Distinct().ToList();
 
-                    // Dont set Doors as nodes in the graph, set them as blockers
-                    if (node.Thing >= 'A' && node.Thing <= 'Z')
-                    {
-                        LinkThings(parent, newLocation, location, distance + 1, blockers + node.Thing, maze, things);
-                    }
-                    else
-                    {
-                        LinkThings(node, newLocation, location, 0, blockers, maze, things); // start from new node, and distance = 0, with parent's blockers
-                    }
-                }
-                else
+                for(int i = open.Count() - 1; i >= 0; i--)
                 {
-                    LinkThings(parent, newLocation, location, distance + 1, blockers, maze, things);
+                    var (location, parent, blockers) = open[i];
+                    if(visited.Contains(location))
+                    {
+                        open.RemoveAt(i);
+                        continue;
+                    }
+
+                    var node = things.FirstOrDefault(t => t.Location == location);
+                    if (node != null)
+                    {
+                        //Debug.WriteLine($"{node.Thing} at {location} has parent {parent.Thing} at distance {distance}");
+
+                        node.Distance = distance;
+
+                        if (node.Thing >= 'a')
+                        {
+                            node.Parent = parent;
+                            node.Blockers = blockers;
+                        }
+                        else
+                        {
+                            blockers += node.Thing;
+                            node = parent; // don't replace the parent
+                        }
+
+                        open[i] = (location, node, blockers); // all subsequent items will use this new parent
+                    }
+
+                    visited.Add(location);
                 }
             }
         }
 
-        private Dictionary<(Node, Node), int> MeasureThings(List<Node> things, string[] maze)
-        {
-            var result = new Dictionary<(Node, Node), int>();
-
-            for (int i = 0; i < things.Count; i++)
-            {
-                Dictionary<Node, int> distances = new Dictionary<Node, int>();
-                Node node = things[i];
-                Measure(node.Location, node.Location, 0, maze, things, ref distances);
-
-                foreach (var pair in distances)
-                {
-                    if (!result.ContainsKey((pair.Key, node)))
-                    {
-                        result[(node, pair.Key)] = pair.Value;
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private void Measure((int x, int y) location, (int x, int y) previous, int distance, string[] maze, IEnumerable<Node> things, ref Dictionary<Node, int> distances)
-        {
-            foreach (var newLocation in GetAdjacentLocations(maze, location, previous))
-            {
-                var node = things.FirstOrDefault(t => t.X == newLocation.x && t.Y == newLocation.y);
-
-                if (node != null)
-                {
-                    distances[node] = distance + 1;
-                    // Stops searching along this branch
-                    // TODO: could stop search if found everything in things list
-                }
-                else
-                {
-                    Debug.WriteLine($"Measure {newLocation} from {location} from {previous} [{distance + 1}]");
-                    Measure(newLocation, location, distance + 1, maze, things, ref distances);
-                }
-            }
-        }
-
-        private IEnumerable<(int x, int y)> GetAdjacentLocations(string[] maze, (int x, int y) location, (int x, int y) previous)
+        private IEnumerable<(int x, int y)> GetAdjacentLocations(string[] maze, (int x, int y) location, (int x, int y)? previous = null)
         {
             var up =    GetOrCreateLocation(maze, location.x    , location.y - 1, previous); // UP
             var down =  GetOrCreateLocation(maze, location.x    , location.y + 1, previous); // DOWN
@@ -405,11 +335,11 @@ namespace AdventCode2019
             if (right.HasValue) yield return right.Value;
         }
 
-        private (int x, int y)? GetOrCreateLocation(string[] maze, int x, int y, (int x, int y) previous)
+        private (int x, int y)? GetOrCreateLocation(string[] maze, int x, int y, (int x, int y)? previous = null)
         {
             if (x >= 0 && x < maze[0].Length && y >= 0 && y < maze.Length)
             {
-                if(previous.x != x || previous.y != y)
+                if(!previous.HasValue || previous?.x != x || previous?.y != y)
                 {
                     if (maze[y][x] != '#')
                     {
