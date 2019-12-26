@@ -13,35 +13,171 @@ namespace AdventCode2019
         string [] maze = Utils.StringsFromFile("day18.txt").ToArray();
 
         [TestMethod]
+        public void TestA()
+        {
+            var maze = new string[]
+            {
+               "#################",
+               "#i.G..c...e..H.p#",
+               "########.########",
+               "#j.A..b...f..D.o#",
+               "########@########",
+               "#k.E..a...g..B.n#",
+               "########.########",
+               "#l.F..d...h..C.m#",
+               "#################",
+            };
+
+            long result = SolveMaze(maze);
+
+            Assert.AreEqual(result, 136);
+        }
+
+        [TestMethod]
+        public void TestB()
+        {
+            var maze = new string[]
+            {
+               "########################",
+               "#...............b.C.D.f#",
+               "#.######################",
+               "#.....@.a.B.c.d.A.e.F.g#",
+               "########################",
+            };
+
+            long result = SolveMaze(maze);
+
+            Assert.AreEqual(result, 132);
+        }
+
+        [TestMethod]
+        public void TestC()
+        {
+            var maze = new string[]
+            {
+               "########################",
+               "#@..............ac.GI.b#",
+               "###d#e#f################",
+               "###A#B#C################",
+               "###g#h#i################",
+               "########################",
+            };
+
+            long result = SolveMaze(maze);
+
+            Assert.AreEqual(result, 81);
+        }
+
+        [TestMethod]
+        public void TestD()
+        {
+            var maze = new string[]
+            {
+   "#################################################################################",
+   "#.#...#.........#i........U.........#...#.........#.......#.............#.....E.#",
+   "#.#.#.#.###.###Q#########.#########I#X#####.#####.#####.#.#.#######.###.#.#####.#",
+   "#...#..u..#...#.#.........#l#...D.#.#...#...#...#.......#.#.#.......#.#.#.#...#.#",
+   "#############.#.#.#########.#.###.#.###.#.###.#.#.#######.###.#######.#.#.#B#.#.#",
+   "#...A.......#.#...#.#.....#...#...#...#.#.#.#.#...#...#......p#.......#.#.#.#.#.#",
+   "#.#########.#.#####.#.#.#S#.###.#####.#.#.#.#.#####.#.#########.###.###.###.#.#.#",
+   "#.#.........#...#...#.#.#.#...#.....#.#.#.#...#.#...#.......#.....#.#...#...#...#",
+   "#.#########.#.#.###.#.#.#####.###.#.#.#.#.#.###.#.#########.#####.#.#.###.#####.#",
+   "#.#.......#.#q#...#...#.#.....#.#.#.#...#.#.....#.#.....#.#.K.#...#.......#...#.#",
+   "#.#.#####.#.#.###W#####.#.#####.#.#.###.#.#######.###.#.#.###.#.###########.#.#.#",
+   "#...#...#.#y#...#.....#.#...L...#.#d#...#.....#...#...#.....#.#.#...#...#...#...#",
+   "#####.#.#.#.#########.#.#######.#.###.#######.#.###.#########.###.#.#.#.#.#######",
+   "#.....#...#.#.........#.N.....#n#...#x#.#.....#.#.....#.......#...#.#.#.#f#..o..#",
+   "#.#########.#.#########.###.###.###.#.#.#.###.#.#.###.#.#######.###.#.###.#.###.#",
+   "#...#.#.....#...#.....#.#.#...#.#.#.....#..t#.#.#...#.#...#...#...#.#.#...#...#.#",
+   "###O#.#.#####.#.#.#.###.#.###.#.#.#####.###.###.#####.###.#.#.#.###.#.#.#####.#.#",
+   "#...#...#.....#.#.#.#..s#...#.....#..v#.#...#...........#.#.#...#...#.......#.#.#",
+   "#.###.#########.#.#.#.###.#.#####.#.#.###.###.###########.#.#####.#########.###.#",
+   "#.#..g..........#.#.......#.#...#.#.#...#.#...#.#.......#.......#.#...#.....#...#",
+   "#.#.#############.#########.#.#.###.###.#.#.###.#.#####.#.#######.#.#.#.#####.#.#",
+   "#.#.#...........#.#.#.#....z#.#.....#...#.#.....#...#.#.#.#.#...#.#.#.#.#.....#.#",
+   "#.###.#########.#.#.#.#######.#######.###.#####.###.#.#.#.#.###.#.#.#.#.#####.#.#",
+   "#.....#...#.....#...#.........#.....#...#.....#...#...#.#.....#.#...#.#.#.....#.#",
+   "#.#####.#.#.#######.###########.#######.#.#######.###.#.###.###.#####.#.#.#####.#",
+   "#.....#.#.#...#.Z.#.#....j..#.........#.#...#.......#.#.#...#...#.....#.#.#...#.#",
+   "#######.#.###.#.###.#.#####.#.#####.###.#.#.#.#######.#.#####.###.#####.#.###.#.#",
+   "#.......#.#...#.....#.#...#.#...#.#.....#.#.#.#.#.....#...#...#...#.....#...#.#.#",
+   "#.#######.#.#.#####.#.###.#.###.#.#######.#.#.#.#.#######.#.###.#.###.#####.#.#.#",
+   "#.#.#.....#.#.#...#.#...#.#...#...#.#...#.#...#.#.....#.#...#...#...#.......#...#",
+   "#.#.#.#####.#.#.#.#####.#.###.###.#.#.#.#.#####.#####.#.#####.#####.#########.###",
+   "#.#...#.....#.#.#.#...#...#.#.#...#...#.#.#...#.....#...#.#...#...#.....#...#.#.#",
+   "#.###.###.#.###.#.#.#.###.#.#.#.#######.#.#.#.#####.###.#.#.###.#.#####.###.#.#.#",
+   "#...#...#.#.#...#.#.#...#.#.#.#.#.......#...#.........#.#...#...#.#...#...#.#...#",
+   "#.#.###.#.#.#.###.#.###.#.#.#.#.###.###.###########.###.#.###.###.###.###.#.###.#",
+   "#.#...#.#.#.#...#...#...#.#.#.#.....#...#...#.....#.#...#.....#.....#.#...#..h#.#",
+   "#.###.#.#.#####.#####.#.#.#.#.#######.###.#.#####.#.#.#############.#.#.###.#.#.#",
+   "#...#.#.F.#...#.....#.#.#.#.#.#...#...#.#.#.......#.#.#...#...#...#...#.#.#.#...#",
+   "###.#.#####.#.#####.#.###.#.#.#.#.#.###.#.#########.#.#.#.#.#.#.#.#####.#.#.#####",
+   "#...#.......#.......#.......#...#..................r#...#...#...#.......#.......#",
+   "#######################################.@.#######################################",
+   "#...........#.............#.#.....#...........#...........#...#.....#.....#.....#",
+   "#########.#.#.###########.#.#.#.###.#.#.#.#.###.#####.#####.#.#####.#.###.#.#.###",
+   "#...#.....#.#...#.......#.#.#.#.....#.#.#.#.....#.....#.....#.#...#....w#...#...#",
+   "#.#.#.#####.###.#####.#.#.#.#.#####.#.###.#######.###.#.#####.#.#.#####.#######.#",
+   "#.#.H.#...#...#.#...#.#.#.#...#...#.#...#.#.....#.#...#.....#...#...#...#.....#.#",
+   "#.#.###.#.#####.#.#.#.###.#.###.#.###.#.#.###.#.#.#####.#######.###.#####.###.#.#",
+   "#.#.#...#.......#.#...#...#.#...#...#.#.#...#.#.#.......#.....#.#...#.....#.#a#.#",
+   "#.#.#.###########.#####.###R#.#####.###.###.###.#########.###.#.#.###.#####.#.#.#",
+   "#.#.#.#.....#.....#...#.#...#.#...#...#.#.#...#.....#.....#...#.#.#.......#...#.#",
+   "#.#.#.#.###.#.#.###.#.#.#####.#.#####.#.#.###.#.#.#.#.#####.#####.#.#####.#.###.#",
+   "#.#.#.#...#...#.....#.#...#...#.....#...#.#...#.#.#.#.#...........#.#.....#...#.#",
+   "#.#.#.###.###########.###.#.###.###.###.#.#.###.#.###.#############.#.#######.#Y#",
+   "#.#.#.#.#.#.........#...#.#...#.#.#...#.#.#...#.#.#...#...#.#.....#.#.....#...#.#",
+   "#.#.#.#.#.#########.#.###.###.#.#.#.#.#.#.###.###.#.###.#.#.#.#.###.#####.#.###.#",
+   "#.#.#.#...#.........#.........#...#.#.#.#...#.....#.....#.#...#.........#.#.#...#",
+   "#.###.#.###.#.#######.###########.#.###.#.#######.#######.#.#############.#.#.#.#",
+   "#...#.#.#...#.#.....#.#.....#...J.#.....#...#...#...#.....#.#...#...#.....#...#.#",
+   "###.#.#.###.#.#.###.###.###.#.###########.#.#.#.###.#.#####.#.#.###.#.#########.#",
+   "#...#.#.....#.#...#.....#...#.#...#.....#.#.#.#.....#.#.......#.....#.....#.....#",
+   "#.###.###.#######.#######.###.#.###.#.#####.#.#######.###.#########.#####.#.#####",
+   "#...#.#.#.#.......#.#.....#.#.#.....#...#.V.#.....#.#...#...#.#...#...#...#.....#",
+   "###.#.#.#.#.#######.#######.#.#########.#.#######.#.###.###.#.#.#####.#.#######.#",
+   "#...#.#...#.#.......#.......#.......#...#.......#.#...#...#.#.#...#...#.#...#...#",
+   "#.###.#####.#.#####.#.#.###.#######.#.#.#.#.###.#.#.#.###.###.###.#.###.#.#G#.###",
+   "#...#.....#...#...#.#.#.#.#.#.....#...#.#.#.#...#.#.#b..#...#...#.#.#c..#.#.....#",
+   "#.#.#####.#####.#.#.#.#.#.#.###.#######.#.#.#####.#####.###.###.#.#.#.###########",
+   "#.#.C...#.......#...#.#.#.......#...#...#.#.#...#.#.....#.#.#...#...#...#......m#",
+   "#.#####.#############.#.###.#####.#.#.###.#.#.#T#.#.###.#.#.#.#####.###.#.#####.#",
+   "#...#.#.......#.....#.#...#.#.....#...#.#.#.#.#...#.#...#.#.#.....#...#.....#...#",
+   "###.#.#####.###.#.#.#.###.#.#.#########.#.#.#.#####.#.###.#.#####.###.#######.#.#",
+   "#.#...#...#.#...#.#.#.#...#.#.....#.....#.#...#.....#.#...#.....#.#...#.#...#.#.#",
+   "#.###.#.###M#.###.###.#.#########.###.#.#.#####.#.###.#.#.#.#####.###.#.#.#.#.#.#",
+   "#.....#...#...#...#...#...#.......#...#.#.#...#.#...#.#.#.#.....#...#...#.#...#.#",
+   "#.#######.#####.#.#.#####.#.#######.###.#.#.#.#####.#.#.#######.###.#####.#####.#",
+   "#.#.........#...#.#.#.#...#.#.......#...#k#.#.......#.#.....#...#...#.....#.....#",
+   "#.#.#######.#.###.#.#.#.###.###.#####.###.#.#########.#####.#.###.###.#####.#####",
+   "#...#...#...#...#.#...#...#...#...#.#.#.#...#.#.....#.#e....#.....#...#...#.#...#",
+   "#####.#.#.#####.#####.###P###.###.#.#.#.#####.#.#.###.#.###.#######.###.###.#.#.#",
+   "#.....#.......#.........#.........#.....#.......#.......#...........#.........#.#",
+   "#################################################################################",
+            };
+
+            long result = SolveMaze(maze);
+
+            Assert.AreEqual(result, 2946);
+        }
+
+        [TestMethod]
         public void Problem1()
         {
-            //var maze = new string[]
-            //{
-            //   //"#################",
-            //   //"#i.G..c...e..H.p#",
-            //   //"########.########",
-            //   //"#j.A..b...f..D.o#",
-            //   //"########@########",
-            //   //"#k.E..a...g..B.n#",
-            //   //"########.########",
-            //   //"#l.F..d...h..C.m#",
-            //   //"#################",
+            long result = SolveMaze(maze);
 
-            ////   //"########################",
-            ////   //"#...............b.C.D.f#",
-            ////   //"#.######################",
-            ////   //"#.....@.a.B.c.d.A.e.F.g#",
-            ////   //"########################",
+            Assert.AreEqual(result, 5520); // fnagxoezkmwpuvtdlsirqjyhcb
+        }
 
-            //   "########################",
-            //   "#@..............ac.GI.b#",
-            //   "###d#e#f################",
-            //   "###A#B#C################",
-            //   "###g#h#i################",
-            //   "########################",
-            //};
+        [TestMethod]
+        public void Problem2()
+        {
+            var result = 0L;
+            Assert.AreEqual(result, 1143770635);
+        }
 
-
+        private long SolveMaze(string [] maze)
+        {
             // Get coordinates of all non-walls and non-floors
             var things = FindThings(maze);
 
@@ -58,19 +194,11 @@ namespace AdventCode2019
 
             // Work out distances between all nodes for convenience
             CalculateDistances(things, measurements, startNode);
-            
+
             // Solve problem
-            long result = SolveBFS(startNode, things, measurements);
-
-            Assert.AreEqual(result, 5520); // fnagxoezkmwpuvtdlsirqjyhcb
+            return SolveBFS(startNode, things, measurements);
         }
 
-        [TestMethod]
-        public void Problem2()
-        {
-            var result = 0L;
-            Assert.AreEqual(result, 1143770635);
-        }
 
         private void CalculateDistances(List<Node> nodes, Dictionary<(Node from, Node to), int> measurements, Node startNode)
         {
@@ -157,9 +285,10 @@ namespace AdventCode2019
             public string visited = "";
             public int distance = 0;
 
-            public void Update(IEnumerable<Node> things, Dictionary<(Node, Node), int> measurements)
+            public void Update(IEnumerable<Node> things, Dictionary<(Node, Node), int> measurements, Node start)
             {
-                var available = things.Where(t => t != node && !t.Blockers.Except(visited).Any() && !visited.Contains(t.Thing));
+                var available = things.Where(t => t != node && !t.Blockers.Except(visited).Any() && !visited.Contains(t.Thing)
+                && (t.Parent == start || visited.Contains(t.Parent.Thing)));
                 var group = available.ToLookup(a => a.Parent == node); // prioritise those with this as parent
                 open = group[true].OrderBy(t => measurements[(t, node)]).Concat(group[false].OrderBy(t => measurements[(t, node)])).ToList();
             }
@@ -173,80 +302,53 @@ namespace AdventCode2019
             var open = things.Where(t => !t.Blockers.Except(preVisit).Any() && t.Parent == start).OrderBy(t => t.Distance).Reverse();
             var searches = new List<BFSSearch> { new BFSSearch { open = open.ToList(), node = start } };//open.Select(o => new BFSSearch { open = open.ToList(), node = o }).ToList();
 
-            int solutionCount = 0;
             int minResult = int.MaxValue;
-            int culledPrevious = 0;
+            string result = string.Empty;
 
-            Dictionary<String, int> previous = new Dictionary<string, int>();
+            var previous = new Dictionary<string, int>();
 
-            while(searches.Any() && searches.First().visited.Length < targetLength /*&& solutionCount < 10000*/)
+            while(searches.Any()/* && searches.First().visited.Length < targetLength */ /*&& solutionCount < 10000*/)
             {
                 var search = searches.First();
-
-                if (search.open.Count() == 0 || search.distance >= minResult)
-                {
-                    searches.Remove(search);
-                    continue;
-                }
-
                 var node = search.open.First();
                 search.open.RemoveAt(0);
-
-                if (search.open.Count() == 0)
-                {
-                    searches.Remove(search);
-                }
 
                 //Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
 
                 var visited = search.visited + node.Thing; //String.Concat((search.visited + node.Thing).ToLower().OrderBy(c => c));
                 var distance = measurements[(search.node, node)] + search.distance;
-                
-                if (distance < minResult)
+                var previousKey = node.Thing + String.Concat(search.visited.OrderBy(c => c));
+
+                if (visited.Length == targetLength)
                 {
-                    var previousKey = String.Concat(search.visited.OrderBy(c => c)) + node.Thing;
+                    //if(distance < minResult) Debug.WriteLine($"{visited} in {distance}");
 
-                    if (visited.Length == targetLength)
+                    result = visited;
+                    minResult = Math.Min(minResult, distance);
+                }
+                else if (distance < minResult && (!previous.TryGetValue(previousKey, out int previousDistance) || previousDistance >= distance))
+                {
+                    previous[previousKey] = distance;
+
+                    var newSearch = new BFSSearch { node = node, visited = visited, distance = distance };
+                    newSearch.Update(things, measurements, start);
+
+                    if (newSearch.open.Count() > 0)
                     {
-                        if (minResult > distance)
-                        {
-                            minResult = distance;
-                        }
-
-                        Debug.WriteLine($"{visited} in {distance} [{minResult}] after {solutionCount + 1} tries");
-
-                        solutionCount++;
+                        searches.Add(newSearch);
+                        searches.Sort((a, b) => /*a.distance.CompareTo(b.distance)); //*/ b.visited.Length.CompareTo(a.visited.Length));
                     }
-                    else if(previous.TryGetValue(previousKey, out int previousDistance) && previousDistance <= distance)
+
+                    if (search.open.Count() > 0)
                     {
-                        culledPrevious++;
-                        searches.Remove(search);
-                    }
-                    else
-                    {
-                        previous[previousKey] = distance;
-
-                        var newSearch = new BFSSearch { node = node, open = new List<Node>(search.open), visited = visited, distance = distance };
-                        newSearch.Update(things, measurements);
-
-                        if (newSearch.open.Count() > 0)
-                        {
-                            searches.Add(newSearch);
-
-                            // TODO: necessary to sort everytime?
-                            // Sorting by anything but distance means that the solution return may not be the shortest
-                            searches.Sort((a, b) => b.visited.Length.CompareTo(a.visited.Length));
-                        }
+                        continue;
                     }
                 }
-                else
-                {
-                    searches.Remove(search);
-                }
 
+                searches.Remove(search);
             }
-
             
+            Debug.WriteLine($"{result} took {minResult}");
             return minResult;
         }
 
