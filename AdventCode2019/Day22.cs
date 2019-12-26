@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Numerics;
 
 namespace AdventCode2019
 {
@@ -42,39 +43,36 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            long Inverse(long a, long n)
-            {
-                long t = 0;
-                long newt = 1;
-                long r = n;
-                long newr = a;
-                while (newr != 0)
-                {
-                    long quotient = r / newr;
-                    (t, newt) = (newt, t - quotient * newt);
-                    (r, newr) = (newr, r - quotient * newr);
-                }
 
-                if (r > 1) return -1;
-
-                if (t < 0) t += n;
-                return t;
-            }
 
 
             long deckSize = 119315717514047;
             long cardIndex = 2020;
+            long repeats  = 101741582076661;
+            long result = 0;
 
-            long result = Inverse(51, deckSize);
-            long value = (result * cardIndex) % deckSize;
-            long check = (value * 51) % deckSize;
+            // Can find what index leads to 2020 using reverse index x' = (a.x + b)
+            // but need to repeat n times!
+            // y = (a.x + b)^n
+            // iterated functions: https://en.wikipedia.org/wiki/Iterated_function
+            // f(a.x + b)^n = a^n.x + b . (a^n - 1) / (a - 1) 
+            // And as using modulus math, that divide is ModInv
 
+            (var a, var b) = CalculateReverseIndexFormula(deckSize);
 
-            //long repeats = 101741582076661;
+            var modpow = BigInteger.ModPow(a, repeats, deckSize);
+            var bDash = b * (modpow - 1) * ModInv((long) a - 1, deckSize); // divide in modulus!
+            var aDash = modpow;
 
-            //// Too long to actually create deck, but know which slot we want.
-            //// Running backwards from end, we can work out which card is in that slot!
+            result = (long)((aDash * cardIndex + bDash) % deckSize);
 
+            Assert.AreEqual(result, 12706692375144);
+        }
+
+        //// Too long to actually create deck, but know which slot we want.
+        //// Running backwards from end, we can work out which card is in that slot!
+        private List<long> NaiveAttempt(long deckSize, ref long cardIndex, long result)
+        {
             var inputs = new List<long> { cardIndex };
 
             for (int i = 0; i < 10; i++)
@@ -119,7 +117,7 @@ namespace AdventCode2019
                     else // "deal with increment"
                     {
                         int increment = int.Parse(line.Substring(20));
-                        long inverse = Inverse(increment, deckSize);
+                        long inverse = ModInv(increment, deckSize);
                         cardIndex = (result * cardIndex) % deckSize;
                     }
 
@@ -127,11 +125,8 @@ namespace AdventCode2019
                 }
                 inputs.Add(cardIndex);
             }
-            // card @ 8394737559856 ends in spot 2020 after 1 round
-            //inputs.Reverse();
-            Debug.WriteLine($"{String.Join(", ", inputs.Select(input => input.ToString()))}");
 
-            Assert.AreEqual(result, 4825810);
+            return inputs;
         }
 
         private IEnumerable<int> Shuffle(IEnumerable<int> deck)
@@ -177,6 +172,106 @@ namespace AdventCode2019
             }
 
             return deck;
+        }
+
+
+        private (long a, long b) CalculateIndexFormula(long deckSize)
+        {
+            long a = 1;
+            long b = 0;
+
+            foreach (string line in input)
+            {
+                long oldA = a;
+                long oldB = b;
+
+                if (line.StartsWith("cut"))
+                {
+                    long cutOffset = long.Parse(line.Substring(4));
+
+                    // (ax + b) - c
+                    b = (b - cutOffset + deckSize) % deckSize;
+                }
+                else if (line.StartsWith("deal into"))
+                {
+                    // len - 1 - (ax + b) equiv -1 - (ax+b)
+                    a = (-a + deckSize) % deckSize;
+                    b = (-b - 1 + deckSize) % deckSize;
+                }
+                else // "deal with increment"
+                {
+                    long increment = long.Parse(line.Substring(20));
+                    // inc * (ax + b)
+                    a = (a * increment) % deckSize;
+                    b = (b * increment) % deckSize;
+                }
+
+                //Debug.WriteLine($"{line} : ({oldA}, {oldB}) => ({a}, {b})");
+
+            }
+
+            return (a, b);
+        }
+
+        private (BigInteger a, BigInteger b) CalculateReverseIndexFormula(long deckSize)
+        {
+            BigInteger a = 1;
+            BigInteger b = 0;
+
+            foreach (string line in input.Reverse())
+            {
+                BigInteger oldA = a;
+                BigInteger oldB = b;
+
+                if (line.StartsWith("cut"))
+                {
+                    long cutOffset = long.Parse(line.Substring(4));
+
+                    // (ax + b) + c
+                    b = (b + cutOffset + deckSize) % deckSize;
+                }
+                else if (line.StartsWith("deal into"))
+                {
+                    // len - 1 - (ax + b) equiv -1 - (ax+b)
+                    a = (-a + deckSize) % deckSize;
+                    b = (-b - 1 + deckSize) % deckSize;
+                }
+                else // "deal with increment"
+                {
+                    long increment = long.Parse(line.Substring(20));
+                    // inc * (ax + b)
+
+                    long inverse = ModInv(increment, deckSize);
+                    //long value = (result * cardIndex) % deckSize;
+
+                    a = (a * inverse) % deckSize;
+                    b = (b * inverse) % deckSize;
+                }
+
+                //Debug.WriteLine($"{line} : ({oldA}, {oldB}) => ({a}, {b})");
+
+            }
+
+            return (a, b);
+        }
+
+        long ModInv(long a, long n)
+        {
+            long t = 0;
+            long newt = 1;
+            long r = n;
+            long newr = a;
+            while (newr != 0)
+            {
+                long quotient = r / newr;
+                (t, newt) = (newt, t - quotient * newt);
+                (r, newr) = (newr, r - quotient * newr);
+            }
+
+            if (r > 1) return -1;
+
+            if (t < 0) t += n;
+            return t;
         }
     }
 }
