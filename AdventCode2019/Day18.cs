@@ -220,88 +220,44 @@ namespace AdventCode2019
             return SolveBFS(startNode, things, measurements);
         }
 
-        [DebuggerDisplay("{node} : {visited} with {open.Count()} open [{distance}]")]
-        private class BFSSearch
-        {
-            public Node node;
-            public Stack<Node> open; // using a stack is slightly slower than removing from the start of a list!
-            public string visited = "";
-            public int distance = 0;
-
-            public BFSSearch(Node node, IEnumerable<Node> open) // Create with root node
-                : this(node, "", node.Distance, open)
-            { }
-
-            public BFSSearch(Node node, string visited, int distance, IEnumerable<Node> open)
-            {
-                this.node = node;
-                this.visited = visited;
-                this.distance = distance;
-                this.open = new Stack<Node>(open);
-            }
-        }
-
         public long SolveBFS(Node start, IEnumerable<Node> things, Dictionary<(Node, Node), int> measurements)
         {
-            IEnumerable<Node> GetOpen(Node node, string visited)
-            {
-                var available = things.Where(t => t != node && !t.Blockers.Except(visited).Any()
-                                         && !visited.Contains(t.Thing));
-                //&& (t.Parent == start || visited.Contains(t.Parent.Thing))); // no need to check parents as now have keys as blockers too.
-                return available.ToList();
-
-                //var group = available.ToLookup(a => a.Parent == node); // prioritise those with this as parent
-                //return group[true].OrderBy(t => measurements[(t, node)]).Concat(group[false].OrderBy(t => measurements[(t, node)])).ToList();
-            }
+            IEnumerable<Node> GetOpen(Node node, string visited) =>
+                    things.Where(t => !visited.Contains(t.Thing) && !t.Blockers.Except(visited).Any());
 
             var targetLength = things.Count();
             int minResult = int.MaxValue;
             string result = string.Empty;
 
-            var previous = new Dictionary<string, int>();
-            var searches = new List<BFSSearch> { new BFSSearch(start, GetOpen(start, "")) };
+            var explored = new Dictionary<string, int>();
+            var searches = new Stack<(Node node, string visited, int distance)>();
 
-            while (searches.Any())
+            searches.Push((start, "", 0));
+
+            while (searches.Count > 0)
             {
-                var search = searches.First();
-                var node = search.open.Pop();
+                (Node current, string currentVisited, int currentDistance) = searches.Pop();
 
-                //Debug.WriteLine($"Try {search.distance} : {search.node.Thing} -> {search.visited} + {node.Thing}");
-
-                var visited = search.visited + node.Thing; //String.Concat((search.visited + node.Thing).ToLower().OrderBy(c => c));
-                var distance = measurements[(search.node, node)] + search.distance;
-                var previousKey = node.Thing + String.Concat(search.visited.OrderBy(c => c));
-
-                if (distance < minResult)
+                foreach (var node in GetOpen(current, currentVisited))
                 {
-                    if (visited.Length == targetLength)
+                    var visited = currentVisited + node.Thing;
+                    var distance = measurements[(current, node)] + currentDistance;
+                    var exploredKey = node.Thing + String.Concat(currentVisited.OrderBy(c => c));
+
+                    if (distance < minResult)
                     {
-                        if (distance < minResult)
+                        if (visited.Length == targetLength)
                         {
                             result = visited;
                             minResult = distance;
-
-                            //Debug.WriteLine($"{visited} in {distance}");
                         }
-                    }
-                    else if (!previous.TryGetValue(previousKey, out int previousDistance) || previousDistance > distance)
-                    {
-                        previous[previousKey] = distance;
-
-                        var open = GetOpen(node, visited);
-                        if (open.Any())
+                        else if (!explored.TryGetValue(exploredKey, out int previousDistance) || previousDistance > distance)
                         {
-                            var newSearch = new BFSSearch(node, visited, distance, open);
+                            explored[exploredKey] = distance;
 
-                            searches.Insert(0, newSearch); // will be the next one looked at
+                            searches.Push((node, visited, distance));
                         }
                     }
-                }
-
-                if (!search.open.Any())
-                {
-                    searches.Remove(search);
-                    searches.Sort((a, b) => /*/a.distance.CompareTo(b.distance)); //*/ b.visited.Length.CompareTo(a.visited.Length));
                 }
             }
 
