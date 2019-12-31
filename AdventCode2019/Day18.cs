@@ -185,9 +185,12 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
-            long result = SolveMaze(maze);            
+            FillMaze(ref maze);
+            Paint(maze);
 
-            Assert.AreNotEqual(result, 5520); // fnagxoezkmwpuvtdlsirqjyhcb
+            long result = SolveMaze(maze);
+
+            Assert.AreEqual(result, 5392);
         }
 
         [TestMethod]
@@ -210,11 +213,8 @@ namespace AdventCode2019
 
             things.RemoveAll(n => n.Thing < 'a');
 
-            // Work out distances between start nodes (those that link to @)
-            var measurements = RootDistances(things.Where(t => t.Parent == startNode).ToList(), maze);
-
-            // Work out distances between all nodes for convenience
-            CalculateDistances(things, measurements, startNode);
+            // Work out distances between all nodes 
+            var measurements = CalculateDistances(startNode, things.ToList(), maze);
 
             // Solve problem
             return SolveBFS(startNode, things, measurements);
@@ -290,9 +290,9 @@ namespace AdventCode2019
 
         private void LinkNodesBFS(Node start, string[] maze, IEnumerable<Node> things)
         {
-            var open = GetAdjacentLocations(maze, start.Location).Select(o => (location: o, parent: start, blockers: "")).ToList();
+            var open = new List<((int x, int y) location, Node parent, String blockers)> { (start.Location, null, "") };
             var visited = new List<(int x, int y)>();
-            int distance = 1;
+            int distance = 0;
 
             while (open.Count() > 0)
             {
@@ -336,42 +336,7 @@ namespace AdventCode2019
             }
         }
 
-        private void CalculateDistances(List<Node> nodes, Dictionary<(Node from, Node to), int> measurements, Node startNode)
-        {
-            List<Node> toSet = new List<Node>(nodes.Except(nodes.Where(t => t.Parent == startNode)));
-            List<Node> available = new List<Node>(nodes.Except(toSet));
-
-            while (toSet.Any())
-            {
-                var settable = toSet.Where(n => available.Contains(n.Parent)).ToList();
-                foreach (var item in settable)
-                {
-                    toSet.Remove(item);
-
-                    measurements[(item, startNode)] = item.Distance;
-                    measurements[(startNode, item)] = item.Distance;
-
-                    var parent = item.Parent;
-                    var distance = item.Distance - parent.Distance;
-
-                    measurements.Add((item, item.Parent), distance);
-                    measurements.Add((item.Parent, item), distance);
-
-                    foreach (var otherItem in available.Where(a => a != parent))
-                    {
-                        distance = measurements[(parent, otherItem)] - parent.Distance + item.Distance;
-                        //Debug.WriteLine($"Connect {item}, {otherItem}. Distance = {distance}");
-
-                        measurements.Add((item, otherItem), distance);
-                        measurements.Add((otherItem, item), distance);
-                    }
-
-                    available.Add(item);
-                }
-            }
-        }
-
-        private Dictionary<(Node, Node), int> RootDistances(IList<Node> nodes, string[] maze)
+        private Dictionary<(Node, Node), int> CalculateDistances(Node start, IList<Node> nodes, string[] maze)
         {
             var distances = new Dictionary<(Node, Node), int>();
 
@@ -383,12 +348,12 @@ namespace AdventCode2019
                 var location = node.Location;
 
                 // add root connections
-                distances[(node, node.Parent)] = node.Distance;
-                distances[(node.Parent, node)] = node.Distance;
+                distances[(node, start)] = node.Distance;
+                distances[(start, node)] = node.Distance;
 
-                var open = GetAdjacentLocations(maze, location);
-                var visited = new List<(int x, int y)> { location };
-                int distance = 1;
+                var open = new List<(int x, int y)> { location };
+                var visited = new List<(int x, int y)>();
+                int distance = 0;
 
                 while (missing.Any())
                 {
@@ -397,16 +362,16 @@ namespace AdventCode2019
                     distance++;
 
                     open = open.SelectMany(o => GetAdjacentLocations(maze, o)).Distinct().Except(visited).ToList();
+                    visited.AddRange(open);
 
                     var found = missing.Where(n => open.Contains(n.Location));
+                    missing = missing.Except(found).ToList();
+
                     foreach (var f in found)
                     {
                         distances.Add((node, f), distance);
                         distances.Add((f, node), distance);
                     }
-
-                    missing = missing.Except(found).ToList();
-                    visited.AddRange(open);
                 }
             }
 
@@ -457,6 +422,44 @@ namespace AdventCode2019
             Debug.WriteLine("");
 
             return image.Select(i => i.ToString()).ToArray();
+        }
+
+
+        private void FillMaze(ref string[] maze)
+        {
+            StringBuilder[] image = maze.Select(m => new StringBuilder(m)).ToArray();
+
+            IEnumerable<(int x, int y)> FindDeadEnds()
+            {
+                for (int y = 1; y < image.Length - 1; y++)
+                {
+                    var row = image[y];
+                    for (int x = 1; x < row.Length - 1; x++)
+                    {
+                        if (image[y][x] == '.')
+                        {
+                            int count = 0;
+                            count += image[y - 1][x] == '#' ? 1 : 0;
+                            count += image[y + 1][x] == '#' ? 1 : 0;
+                            count += image[y][x - 1] == '#' ? 1 : 0;
+                            count += image[y][x + 1] == '#' ? 1 : 0;
+
+                            if (count >= 3) yield return (x, y);
+                        }
+                    }
+                }
+            }
+
+            var deadEnds = FindDeadEnds();
+            while (deadEnds.Any())
+            {
+                foreach (var (x, y) in deadEnds)
+                {
+                    image[y][x] = '#';
+                }
+            }
+
+            maze = image.Select(i => i.ToString()).ToArray();
         }
     }
 }
