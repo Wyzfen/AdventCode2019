@@ -185,8 +185,8 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem1()
         {
-            FillMaze(ref maze);
-            Paint(maze);
+            //FillMaze(ref maze);
+            //Paint(maze);
 
             long result = SolveMaze(maze);
 
@@ -196,8 +196,14 @@ namespace AdventCode2019
         [TestMethod]
         public void Problem2()
         {
-            var result = 0L;
-            Assert.AreEqual(result, 1143770635);
+            string[] updated = new[] { "@#@", "###", "@#@" };
+            for (int i = 0; i < 3; i++)
+            {
+                maze[39 + i] = maze[39 + i].Substring(0, 39) + updated[i] + maze[39+i].Substring(42);
+            }
+
+            var result = SolveMaze(maze);
+            Assert.AreEqual(result, 1684);
         }
 
         private long SolveMaze(string[] maze)
@@ -205,57 +211,77 @@ namespace AdventCode2019
             // Get coordinates of all non-walls and non-floors
             var things = FindThings(maze);
 
-            var startNode = things.First(t => t.Thing == '@');
-            things.Remove(startNode);
+            var startNodes = things.Where(t => t.Thing == '@').ToList();
+            
+            things = things.Except(startNodes).ToList();
 
-            // BFS the maze, linking nodes and setting blockers as go.
-            LinkNodesBFS(startNode, maze, things);
+            
+            foreach (var startNode in startNodes)
+            {
+                // BFS the maze, linking nodes and setting blockers as go.
+                LinkNodesBFS(startNode, maze, things);
+            }
 
             things.RemoveAll(n => n.Thing < 'a');
 
-            // Work out distances between all nodes 
-            var measurements = CalculateDistances(startNode, things.ToList(), maze);
+            var groupedThings = things.GroupBy(t => t.TopMost);
+            var measurements = new Dictionary<Node, Dictionary<(Node, Node), int>>();
+            foreach (var group in groupedThings)
+            {
+                // Work out distances between all nodes 
+                measurements[group.Key] = CalculateDistances(group.Key, group.ToList(), maze);
+            }
 
             // Solve problem
-            return SolveBFS(startNode, things, measurements);
+            return SolveBFS(groupedThings, measurements);
         }
 
-        public long SolveBFS(Node start, IEnumerable<Node> things, Dictionary<(Node, Node), int> measurements)
+        public long SolveBFS(IEnumerable<IGrouping<Node, Node>> groupedThings, Dictionary<Node, Dictionary<(Node, Node), int>> measurements)
         {
-            IEnumerable<Node> GetOpen(Node node, string visited) =>
+            IEnumerable<Node> GetOpen(Node node, IEnumerable<Node> things, string visited) =>
                     things.Where(t => !visited.Contains(t.Thing) && !t.Blockers.Except(visited).Any());
 
-            var targetLength = things.Count();
+            var targetLength = groupedThings.SelectMany(g => g).Distinct().Count();
             int minResult = int.MaxValue;
             string result = string.Empty;
 
-            var explored = new Dictionary<string, int>();
-            var searches = new Stack<(Node node, string visited, int distance)>();
+            var explored = new Dictionary<(string, string), int>();
+            var searches = new Stack<(Dictionary<Node, Node> nodes, string visited, int distance)>();
 
-            searches.Push((start, "", 0));
+            var keys = groupedThings.Select(g => g.Key).ToArray();
+
+            searches.Push((keys.ToDictionary(k => k, v => v), "", 0));
 
             while (searches.Count > 0)
             {
-                (Node current, string currentVisited, int currentDistance) = searches.Pop();
-
-                foreach (var node in GetOpen(current, currentVisited))
+                (var currents, string currentVisited, int currentDistance) = searches.Pop();
+                
+                foreach (var group in groupedThings)
                 {
-                    var visited = currentVisited + node.Thing;
-                    var distance = measurements[(current, node)] + currentDistance;
-                    var exploredKey = node.Thing + String.Concat(currentVisited.OrderBy(c => c));
-
-                    if (distance < minResult)
+                    var current = currents[group.Key];
+                    foreach (var node in GetOpen(current, group, currentVisited))
                     {
-                        if (visited.Length == targetLength)
-                        {
-                            result = visited;
-                            minResult = distance;
-                        }
-                        else if (!explored.TryGetValue(exploredKey, out int previousDistance) || previousDistance > distance)
-                        {
-                            explored[exploredKey] = distance;
+                        var visiting = currents.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                        visiting[group.Key] = node;
 
-                            searches.Push((node, visited, distance));
+                        var visited = currentVisited + node.Thing;
+                        var distance = measurements[group.Key][(current, node)] + currentDistance;
+                        var currentString = string.Concat(visiting.Values.Select(t => t.Thing));
+                        var exploredKey = (currentString, String.Concat(currentVisited.OrderBy(c => c)));
+
+                        if (distance < minResult)
+                        {
+                            if (visited.Length == targetLength)
+                            {
+                                result = visited;
+                                minResult = distance;
+                            }
+                            else if (!explored.TryGetValue(exploredKey, out int previousDistance) || previousDistance > distance)
+                            {
+                                explored[exploredKey] = distance;
+
+                                searches.Push((visiting, visited, distance));
+                            }
                         }
                     }
                 }
@@ -286,15 +312,17 @@ namespace AdventCode2019
             public override string ToString() => $"{Thing.ToString()} @ ({X}, {Y}) [{Distance}]";
 
             public (int x, int y) Location => (X, Y);
+
+            public Node TopMost => Parent?.TopMost ?? this;
         }
 
         private void LinkNodesBFS(Node start, string[] maze, IEnumerable<Node> things)
         {
-            var open = new List<((int x, int y) location, Node parent, String blockers)> { (start.Location, null, "") };
+            var open = new List<((int x, int y) location, Node parent, String blockers)> { (start.Location, start, "") };
             var visited = new List<(int x, int y)>();
             int distance = 0;
 
-            while (open.Count() > 0)
+            while (open.Any())
             {
                 distance++;
 
@@ -344,7 +372,6 @@ namespace AdventCode2019
             {
                 // BFS until find other nodes on list
                 var node = nodes[i];
-                var missing = nodes.Except(nodes.Take(i + 1));
                 var location = node.Location;
 
                 // add root connections
@@ -352,25 +379,22 @@ namespace AdventCode2019
                 distances[(start, node)] = node.Distance;
 
                 var open = new List<(int x, int y)> { location };
-                var visited = new List<(int x, int y)>();
+                var visited = new List<(int x, int y)> { node.Location };
                 int distance = 0;
 
-                while (missing.Any())
+                while (open.Any())
                 {
-                    Debug.Assert(open.Any());
-
                     distance++;
 
                     open = open.SelectMany(o => GetAdjacentLocations(maze, o)).Distinct().Except(visited).ToList();
                     visited.AddRange(open);
 
-                    var found = missing.Where(n => open.Contains(n.Location));
-                    missing = missing.Except(found).ToList();
+                    var found = nodes.Where(n => open.Contains(n.Location));
 
                     foreach (var f in found)
                     {
-                        distances.Add((node, f), distance);
-                        distances.Add((f, node), distance);
+                        distances[(node, f)] = distance;
+                        distances[(f, node)] = distance;
                     }
                 }
             }
